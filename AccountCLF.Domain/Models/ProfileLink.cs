@@ -9,13 +9,10 @@ public partial class ProfileLink
 
     public int? EntityId { get; set; }
 
-    public int? FatherName { get; set; }
+    public string? FatherName { get; set; }
 
-    public int? MotherName { get; set; }
+    public string? MotherName { get; set; }
 
-    public virtual Entity? Entity { get; set; }
+    public  Entity? Entity { get; set; }
 
-    public virtual Entity? FatherNameNavigation { get; set; }
-
-    public virtual Entity? MotherNameNavigation { get; set; }
 }

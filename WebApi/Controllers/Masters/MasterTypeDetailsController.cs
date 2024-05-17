@@ -1,5 +1,6 @@
 ﻿using AccountCLF.Application.Contract.Masters;
 using AccountCLF.Data;
+using AccountCLF.Data.Repositories.Masters.MasterType;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,19 +13,29 @@ namespace WebApi.Controllers.Masters
     public class MasterTypeDetailController : ControllerBase
     {
         private readonly IGenericRepository<MasterTypeDetail> _genericRepository;
+        private readonly IMasterTypeRepository _masterTypeRepository;
         private readonly IMapper _mapper;
-        public MasterTypeDetailController(IGenericRepository<MasterTypeDetail> genericRepository, IMapper mapper)
+        public MasterTypeDetailController(IGenericRepository<MasterTypeDetail> genericRepository, IMapper mapper,
+            IMasterTypeRepository masterTypeRepository)
         {
             _genericRepository = genericRepository;
             _mapper = mapper;
+            _masterTypeRepository = masterTypeRepository;
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MasterTypeDetail>>> GetMasterTypeDetails()
+        public async Task<IEnumerable<MasterTypeDetail>> GetMasterTypeDetails()
         {
             var MasterTypeDetails = await _genericRepository.GetAllAsync();
-            return Ok(MasterTypeDetails);
+            return MasterTypeDetails;
         }
-
+        [HttpGet]
+        [Route("mastertype/name")]
+        public async Task<List<MasterTypeDetail>> GetMasterTypeDetailsByName(string name)
+        {
+            var MasterTypeDetails =await _masterTypeRepository.Get(name);
+            return MasterTypeDetails;      
+        }
+         
         [HttpGet("{id}")]
         public async Task<ActionResult<MasterTypeDetail>> GetMasterTypeDetail(int id)
         {

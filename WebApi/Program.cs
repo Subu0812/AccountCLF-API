@@ -13,12 +13,8 @@ using AccountCLF.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//automaper profiles
-
-
-// Add services to the container
 builder.Services.AddAutoMapper(typeof(MappingProfile));
-//builder.Services.AddControllers();
+builder.Services.AddControllers();
 builder.Services.AddControllers().AddJsonOptions(x =>
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
@@ -109,7 +105,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-// Connection
+
 var connection = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<DataContext>(
    x => x.UseSqlServer(connection));
@@ -117,11 +113,12 @@ builder.Services.AddDbContext<DataContext>(
 
 
 builder.Services.AddScoped<IMasterTypeRepository, MasterTypeRepository>();
+
+
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
