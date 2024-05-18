@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Model;
 
 public partial class Entity
 {
+    [Key]
+
     public int Id { get; set; }
 
     public int? TypeId { get; set; }
@@ -13,7 +16,6 @@ public partial class Entity
 
     public int? AccountTypeId { get; set; }
     public virtual AccountGroup? AccountType { get; set; }
-
 
     public int? SessionId { get; set; }
     public virtual AccountSession? Session { get; set; }

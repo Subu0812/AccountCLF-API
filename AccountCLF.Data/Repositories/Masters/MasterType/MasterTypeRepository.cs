@@ -25,5 +25,18 @@ namespace AccountCLF.Data.Repositories.Masters.MasterType
                 .ToListAsync();
             return data;
         }
+
+        public async Task<MasterTypeDetail> UpdateStatus(int id, int isActive)
+        {
+            var data = await _context.MasterTypeDetails.FindAsync(id);
+            if (data != null)
+            {
+                data.IsActive = isActive;
+              var result=  _context.MasterTypeDetails.Update(data);
+              await  _context.SaveChangesAsync();
+                return data;
+            }
+            return null;
+        }
     }
 }

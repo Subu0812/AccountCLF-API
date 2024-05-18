@@ -1,8 +1,6 @@
 ﻿using AccountCLF.Application.Contract.Entities;
-using AccountCLF.Application.Contract.Locations;
 using AccountCLF.Data;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 
@@ -17,8 +15,11 @@ namespace WebApi.Controllers.Entities
         private readonly IGenericRepository<MasterLogin> _masterloginGenericRepository;
         private readonly IGenericRepository<BasicProfile> _basicProfileGenericRepository;
         private readonly IGenericRepository<ContactProfile> _contactProfileGenericRepository;
+        private readonly IGenericRepository<MasterTypeDetail> _masterTypeDetailGenericRepository;
         private readonly IMapper _mapper;
-        public EntityController(IGenericRepository<Entity> entityGenericRepository, IGenericRepository<ProfileLink> profileGenericRepository, IGenericRepository<MasterLogin> masterloginGenericRepository, IMapper mapper, IGenericRepository<BasicProfile> basicProfileGenericRepository, IGenericRepository<ContactProfile> contactProfileGenericRepository)
+        public EntityController(IGenericRepository<Entity> entityGenericRepository, IGenericRepository<ProfileLink> profileGenericRepository,
+            IGenericRepository<MasterLogin> masterloginGenericRepository, IMapper mapper,
+            IGenericRepository<BasicProfile> basicProfileGenericRepository, IGenericRepository<ContactProfile> contactProfileGenericRepository, IGenericRepository<MasterTypeDetail> masterTypeDetailGenericRepository)
         {
             _entityGenericRepository = entityGenericRepository;
             _profileGenericRepository = profileGenericRepository;
@@ -26,13 +27,63 @@ namespace WebApi.Controllers.Entities
             _mapper = mapper;
             _basicProfileGenericRepository = basicProfileGenericRepository;
             _contactProfileGenericRepository = contactProfileGenericRepository;
+            _masterTypeDetailGenericRepository = masterTypeDetailGenericRepository;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateLocation(CreateEntityDto entityDto)
         {
+
             try
             {
+                if (entityDto.ContactTypeId != null)
+                {
+                    var contactTypeId = await _masterTypeDetailGenericRepository.GetByIdAsync((int)entityDto.ContactTypeId);
+                    if (contactTypeId == null)
+                    {
+                        return BadRequest("invalid contact type Id");
+                    }
+                }
+                if(entityDto.AccountTypeId != null)
+                {
+                    var accountTypeId = await _masterTypeDetailGenericRepository.GetByIdAsync((int)entityDto.AccountTypeId);
+                    if (accountTypeId == null)
+                    {
+                        return BadRequest("invalid account type Id");
+                    }
+                }
+                if(entityDto.ReferenceId != null)
+                {
+                    var referenceId = await _masterTypeDetailGenericRepository.GetByIdAsync((int)entityDto.ReferenceId);
+                    if (referenceId == null)
+                    {
+                        return BadRequest("invalid reference Id");
+                    }
+                }
+                if(entityDto.StaffId != null)
+                {
+                    var staffId = await _masterTypeDetailGenericRepository.GetByIdAsync((int)entityDto.StaffId);
+                    if (staffId == null)
+                    {
+                        return BadRequest("invalid staff Id");
+                    }
+                }
+                if(entityDto.TypeId != null)
+                {
+                    var typeId = await _masterTypeDetailGenericRepository.GetByIdAsync((int)entityDto.TypeId);
+                    if (typeId == null)
+                    {
+                        return BadRequest("invalid type Id");
+                    }
+                }
+                if(entityDto.Designation != null)
+                {
+                    var designation = await _masterTypeDetailGenericRepository.GetByIdAsync((int)entityDto.Designation);
+                    if (designation == null)
+                    {
+                        return BadRequest("invalid designation ");
+                    }
+                }
                 var entity = new Entity
                 {
                     AccountTypeId = entityDto.AccountTypeId,
@@ -54,7 +105,7 @@ namespace WebApi.Controllers.Entities
                 var createProfileLink = await _profileGenericRepository.AddAsync(profileLink);
                 var masterLogin = new MasterLogin
                 {
-                    EntityId= createdEntity.Id,
+                    EntityId = createdEntity.Id,
                     Password = entityDto.Password,
                     UserName = entityDto.Email
                 };

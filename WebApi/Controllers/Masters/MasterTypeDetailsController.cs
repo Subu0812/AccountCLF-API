@@ -13,14 +13,16 @@ namespace WebApi.Controllers.Masters
     public class MasterTypeDetailController : ControllerBase
     {
         private readonly IGenericRepository<MasterTypeDetail> _genericRepository;
+        private readonly IGenericRepository<MasterType> _masterGenericRepository;
         private readonly IMasterTypeRepository _masterTypeRepository;
         private readonly IMapper _mapper;
         public MasterTypeDetailController(IGenericRepository<MasterTypeDetail> genericRepository, IMapper mapper,
-            IMasterTypeRepository masterTypeRepository)
+            IMasterTypeRepository masterTypeRepository, IGenericRepository<MasterType> masterGenericRepository)
         {
             _genericRepository = genericRepository;
             _mapper = mapper;
             _masterTypeRepository = masterTypeRepository;
+            _masterGenericRepository = masterGenericRepository;
         }
         [HttpGet]
         public async Task<IEnumerable<MasterTypeDetail>> GetMasterTypeDetails()
@@ -51,6 +53,11 @@ namespace WebApi.Controllers.Masters
         {
             try
             {
+                var masterType = await _masterGenericRepository.GetByIdAsync((int)masterTypeDetail.TypeId);
+                if (masterType == null)
+                {
+                    return BadRequest("invalid Type id ");
+                }
                 var masterTypeDetails = _mapper.Map<MasterTypeDetail>(masterTypeDetail);
                 var createdMasterTypeDetail = await _genericRepository.AddAsync(masterTypeDetails);
                 return createdMasterTypeDetail;
@@ -72,6 +79,16 @@ namespace WebApi.Controllers.Masters
 
             return Ok("Master Type Updated!");
         }
+
+        [HttpPut]
+        [Route("activate/deactivate")]
+        public async Task<IActionResult> UpdateMasterTypeDetailIsActive(int id, int isActive)
+        {
+           await _masterTypeRepository.UpdateStatus(id, isActive);
+            return Ok("data Update Successfully");
+        }
+
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMasterTypeDetail(int id)

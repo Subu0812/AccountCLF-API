@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Model;
 
 public partial class BasicProfile
 {
+    [Key]
+
     public int Id { get; set; }
 
     public int? EntityId { get; set; }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AccountCLF.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 using Model;
 
 namespace Data;
@@ -38,16 +39,17 @@ public partial class DataContext : DbContext
 
     public DbSet<ProfileLink> ProfileLinks { get; set; }
 
+    public DbSet<BankDetail> BankDetails { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DocumentProfile>()
-            .HasOne(d => d.DocExtension) // Assuming DocExtensionNavigation is the correct navigation property name
-            .WithMany() // or .WithOne(), depending on the relationship
+            .HasOne(d => d.DocExtension) 
+            .WithMany() 
             .HasForeignKey(d => d.DocExtensionId)
-            .IsRequired(false); // Depending on your requirements
+            .IsRequired(false); 
 
-        // If you also have a relationship between DocumentProfile and DocTypeNavigation, configure it similarly
         modelBuilder.Entity<DocumentProfile>()
             .HasOne(d => d.DocTypeNavigation)
             .WithMany()
@@ -56,14 +58,14 @@ public partial class DataContext : DbContext
 
 
         modelBuilder.Entity<Entity>()
-               .HasOne(e => e.Reference) // Assuming Reference is the correct navigation property name
-               .WithMany() // or .WithOne(), depending on the relationship
-               .HasForeignKey(e => e.ReferenceId) // Assuming ReferenceId is the foreign key property
+               .HasOne(e => e.Reference) 
+               .WithMany()
+               .HasForeignKey(e => e.ReferenceId) 
                .IsRequired(false);
         modelBuilder.Entity<Entity>()
-               .HasOne(e => e.Staff) // Assuming Reference is the correct navigation property name
-               .WithMany() // or .WithOne(), depending on the relationship
-               .HasForeignKey(e => e.StaffId) // Assuming ReferenceId is the foreign key property
+               .HasOne(e => e.Staff) 
+               .WithMany()
+               .HasForeignKey(e => e.StaffId) 
                .IsRequired(false);
     }
 

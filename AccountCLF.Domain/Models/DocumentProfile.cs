@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Model;
 
 public partial class DocumentProfile
 {
+    [Key]
+
     public int Id { get; set; }
 
     public decimal? SrNo { get; set; }
