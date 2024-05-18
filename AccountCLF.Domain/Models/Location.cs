@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Model;
 
 public partial class Location
 {
-    [Key]
-
     public int Id { get; set; }
 
     public string? SrNo { get; set; }

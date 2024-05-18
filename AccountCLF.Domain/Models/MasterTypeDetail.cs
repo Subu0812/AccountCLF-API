@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Model;
 
 public partial class MasterTypeDetail
 {
-    [Key]
-
     public int Id { get; set; }
 
     public decimal? SrNo { get; set; }
@@ -27,6 +24,10 @@ public partial class MasterTypeDetail
     public DateTime? Date { get; set; }
 
     public virtual ICollection<AddressDetail> AddressDetails { get; set; } = new List<AddressDetail>();
+
+    public virtual ICollection<BankDetail> BankDetailBanks { get; set; } = new List<BankDetail>();
+
+    public virtual ICollection<BankDetail> BankDetailPaymentModes { get; set; } = new List<BankDetail>();
 
     public virtual ICollection<BasicProfile> BasicProfiles { get; set; } = new List<BasicProfile>();
 

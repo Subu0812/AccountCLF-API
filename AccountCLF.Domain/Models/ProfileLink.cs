@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Model;
 
 public partial class ProfileLink
 {
-    [Key]
-
     public int Id { get; set; }
 
     public int? EntityId { get; set; }
@@ -16,6 +13,5 @@ public partial class ProfileLink
 
     public string? MotherName { get; set; }
 
-    public  Entity? Entity { get; set; }
-
+    public virtual Entity? Entity { get; set; }
 }

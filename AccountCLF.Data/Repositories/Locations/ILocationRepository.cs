@@ -1,14 +1,8 @@
 ﻿using Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace AccountCLF.Data.Repositories.Locations
+namespace AccountCLF.Data.Repositories.Locations;
+
+public interface ILocationRepository
 {
-    public interface ILocationRepository
-    {
-        Task<Location> UpdateStatus(int id, int isActive);
-    }
+    Task<Location> UpdateStatus(int id, int isActive);
 }

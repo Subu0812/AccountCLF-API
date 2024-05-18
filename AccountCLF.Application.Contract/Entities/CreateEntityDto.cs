@@ -24,8 +24,6 @@ namespace AccountCLF.Application.Contract.Entities
 
         public int? IsActive { get; set; }
 
-        public int? EntityId { get; set; }
-
         public string? FatherName { get; set; }
 
         public string? MotherName { get; set; }

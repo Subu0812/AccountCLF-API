@@ -1,29 +1,37 @@
-﻿using Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace AccountCLF.Domain.Models
+namespace Model;
+
+public partial class BankDetail
 {
-    public class BankDetail
-    {
-        [Key]
-        public int Id { get; set; }
-        public int EntityId { get; set; }  
-        public Entity Entity { get; set; }
-        public int? SrNo { get; set; }
-        public string BeneficiaryName { get; set; }
-        public string AccountNo { get; set; }
-        public string IFSCCode { get; set; }
-        public int? ParentId { get; set; } 
-        public  BankDetail Parent { get; set; }
-        public int BankId { get; set; }  
-        public MasterTypeDetail Bank { get; set; }  
-        public int PaymentModeId { get; set; }  
-        public MasterTypeDetail PaymentMode { get; set; }  
-        public bool IsActive { get; set; }
-    }
+    public int Id { get; set; }
+
+    public int EntityId { get; set; }
+
+    public int? SrNo { get; set; }
+
+    public string BeneficiaryName { get; set; } = null!;
+
+    public string AccountNo { get; set; } = null!;
+
+    public string Ifsccode { get; set; } = null!;
+
+    public int? ParentId { get; set; }
+
+    public int BankId { get; set; }
+
+    public int PaymentModeId { get; set; }
+
+    public bool IsActive { get; set; }
+
+    public virtual MasterTypeDetail Bank { get; set; } = null!;
+
+    public virtual Entity Entity { get; set; } = null!;
+
+    public virtual ICollection<BankDetail> InverseParent { get; set; } = new List<BankDetail>();
+
+    public virtual BankDetail? Parent { get; set; }
+
+    public virtual MasterTypeDetail PaymentMode { get; set; } = null!;
 }

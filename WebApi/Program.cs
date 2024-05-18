@@ -1,4 +1,3 @@
-using Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -7,14 +6,19 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text;
-using WebApi.Configurations;
-using AccountCLF.Data.Repositories.Masters.MasterType;
+
 using AccountCLF.Data;
+using Data;
+using AccountCLF.Data.Repository.MasterTypeDetails;
+using AccountCLF.Data.Repository.Locations;
+using WebApi.Configurations;
+using AccountCLF.Application.Contract.Services.WhatsappService;
+using AccountCLF.Application.Contract.Services.EmailService;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
-builder.Services.AddControllers();
 builder.Services.AddControllers().AddJsonOptions(x =>
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
@@ -35,40 +39,34 @@ builder.Services.AddCors(options =>
         .AllowCredentials()
         );
 });
-
-
-
 builder.Services.AddAuthentication(opt =>
 {
     opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
+}).AddJwtBearer(o =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
+    o.TokenValidationParameters = new TokenValidationParameters
     {
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = "https://localhost:5226",
-        ValidAudience = "https://localhost:5226",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"))
+        ValidateLifetime = false,
+        ValidateIssuerSigningKey = true
     };
 });
 
+
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Web Api", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Lms Api", Version = "v1" });
 
-    // Customizing Swagger document
     c.CustomOperationIds(apiDesc =>
     {
-        // Use custom operation IDs (optional)
         return apiDesc.TryGetMethodInfo(out MethodInfo methodInfo) ? methodInfo.Name : null;
     });
 
-    // Add a security definition for JWT Bearer token (optional)
     var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -85,8 +83,6 @@ builder.Services.AddSwaggerGen(c =>
     };
 
     c.AddSecurityDefinition("Bearer", securityScheme);
-
-    // Add JWT Bearer authorization to all endpoints (optional)
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -106,13 +102,16 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
 var connection = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<DataContext>(
    x => x.UseSqlServer(connection));
 
 
-
 builder.Services.AddScoped<IMasterTypeRepository, MasterTypeRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<IWhatsappAppService, WhatsappAppService>();
+builder.Services.AddScoped<IEmailAppService, EmailAppService>();
 
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -123,11 +122,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-
-
-
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>
@@ -146,12 +140,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseHsts();
-
+app.UseCors("AllowOrigin");
 app.UseStaticFiles();
 
-
 app.UseHttpsRedirection();
-app.UseCors("AllowOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
 if (app.Environment.IsDevelopment())
@@ -163,7 +155,6 @@ else
 {
     app.UseHttpsRedirection();
 }
-
 
 app.MapControllers();
 app.Run();
