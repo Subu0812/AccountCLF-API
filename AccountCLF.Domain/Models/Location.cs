@@ -19,7 +19,7 @@ public partial class Location
 
     public int? TypeId { get; set; }
 
-    public int? IsActive { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual ICollection<AddressDetail> AddressDetails { get; set; } = new List<AddressDetail>();
 

@@ -1,4 +1,5 @@
 ﻿using AccountCLF.Application.Contract.Locations;
+using AccountCLF.Application.Contract.Masters;
 using AccountCLF.Data;
 using AccountCLF.Data.Repository.Locations;
 using AutoMapper;
@@ -25,32 +26,38 @@ public class LocationsController : ControllerBase
         _locationRepository = locationRepository;
     }
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Location>>> GetLocations()
+    public async Task<ActionResult<IEnumerable<GetLocationDto>>> GetLocations()
     {
-        var locations = await _genericRepository.GetAllAsync();
-        return Ok(locations);
+        var locations = await _locationRepository.Get();
+        if (locations == null)
+        {
+            return NotFound("Data Not Found");
+        }
+        var mappedData = _mapper.Map<List<GetLocationDto>>(locations);
+        return Ok(mappedData);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Location>> GetLocation(int id)
+    public async Task<ActionResult<GetLocationDto>> GetLocation(int id)
     {
-        var location = await _genericRepository.GetByIdAsync(id);
+        var location = await _locationRepository.GetById(id);
         if (location == null)
             return BadRequest("invalid Location Id");
+        var mappedData = _mapper.Map<GetLocationDto>(location);
 
-        return Ok(location);
+        return Ok(mappedData);
     }
 
     [HttpPut]
     [Route("activate/deactivate")]
-    public async Task<IActionResult> UpdatIsActive(int id, int isActive)
+    public async Task<IActionResult> UpdatIsActive(int id)
     {
-        await _locationRepository.UpdateIsActive(id, isActive);
+        await _locationRepository.UpdateIsActive(id);
         return Ok("location Update Successfully");
     }
 
     [HttpPost]
-    public async Task<ActionResult<Location>> CreateLocation(CreateLocationDto locationDto)
+    public async Task<ActionResult<GetLocationDto>> CreateLocation(CreateLocationDto locationDto)
     {
         try
         {
@@ -59,9 +66,20 @@ public class LocationsController : ControllerBase
             {
                 return BadRequest("invalid Type id ");
             }
-            var location = _mapper.Map<Location>(locationDto);
-            var createdLocation = await _genericRepository.AddAsync(location);
-            return createdLocation;
+            if (locationDto.ParentId != null ||locationDto.ParentId!=0)
+            {
+                var location = await _genericRepository.GetByIdAsync((int)locationDto.ParentId);
+                if (location == null)
+                {
+                    return BadRequest("invalid Type id ");
+                }
+            }
+            var mappedData = _mapper.Map<Location>(locationDto);
+            mappedData.IsActive = true;
+            var createdLocation = await _genericRepository.AddAsync(mappedData);
+            var GetMappedData = _mapper.Map<GetLocationDto>(createdLocation);
+
+            return GetMappedData;
         }
         catch (Exception ex)
         {
@@ -70,12 +88,25 @@ public class LocationsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateLocation(int id, Location location)
+    public async Task<IActionResult> UpdateLocation(int id, CreateLocationDto location)
     {
         var existingLocation = await _genericRepository.GetByIdAsync(id);
         if (existingLocation == null)
             return BadRequest("invalid Location Id");
 
+        var masterType = await _masterGenericRepository.GetByIdAsync((int)location.TypeId);
+        if (masterType == null)
+        {
+            return BadRequest("invalid Type id ");
+        }
+        if (location.ParentId != null || location.ParentId != 0)
+        {
+            var locations = await _genericRepository.GetByIdAsync((int)location.ParentId);
+            if (locations == null)
+            {
+                return BadRequest("invalid Type id ");
+            }
+        }
         var mappedData = _mapper.Map(location, existingLocation);
         await _genericRepository.UpdateAsync(id, mappedData);
 

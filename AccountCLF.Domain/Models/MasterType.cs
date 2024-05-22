@@ -15,9 +15,9 @@ public partial class MasterType
 
     public DateTime? Date { get; set; }
 
-    public int? IsDelete { get; set; }
+    public bool? IsDelete { get; set; }
 
-    public int? IsActive { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual ICollection<MasterType> InverseParent { get; set; } = new List<MasterType>();
 

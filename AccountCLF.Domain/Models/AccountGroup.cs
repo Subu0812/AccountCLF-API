@@ -19,7 +19,7 @@ public partial class AccountGroup
 
     public string? NatureType { get; set; }
 
-    public int? IsActive { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual ICollection<Entity> Entities { get; set; } = new List<Entity>();
 

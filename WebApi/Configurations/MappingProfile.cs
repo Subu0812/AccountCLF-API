@@ -11,7 +11,11 @@ namespace WebApi.Configurations
         public MappingProfile()
         {
             CreateMap<CreateMasterTypeDto, MasterType>();
+            CreateMap< MasterType, GetMasterTypeDto>();
+
             CreateMap<CreateMasterTypeDetailDto, MasterTypeDetail>();
+            CreateMap< MasterTypeDetail,GetMasterTypeDetailsDto>();
+
             CreateMap<CreateLocationDto, Location>();
         }
     }

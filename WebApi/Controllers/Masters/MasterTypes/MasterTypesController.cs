@@ -1,5 +1,6 @@
 ﻿using AccountCLF.Application.Contract.Masters.MasterType;
 using AccountCLF.Data;
+using AccountCLF.Data.Repository.MasterTypeDetails;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Model;
@@ -12,36 +13,52 @@ public class MasterTypesController : ControllerBase
 {
     private readonly IGenericRepository<MasterType> _genericRepository;
     private readonly IMapper _mapper;
-    public MasterTypesController(IGenericRepository<MasterType> genericRepository, IMapper mapper)
+    private readonly IMasterTypeRepository _masterTypeRepository;
+    public MasterTypesController(IGenericRepository<MasterType> genericRepository, IMapper mapper, IMasterTypeRepository masterTypeRepository)
     {
         _genericRepository = genericRepository;
         _mapper = mapper;
+        _masterTypeRepository = masterTypeRepository;
     }
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MasterType>>> GetMasterTypes()
+    public async Task<ActionResult<IEnumerable<GetMasterTypeDto>>> GetMasterTypes()
     {
         var masterTypes = await _genericRepository.GetAllAsync();
-        return Ok(masterTypes);
+        var mappedData = _mapper.Map<IEnumerable<GetMasterTypeDto>>(masterTypes);
+        return Ok(mappedData);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<MasterType>> GetMasterType(int id)
+    public async Task<ActionResult<GetMasterTypeDto>> GetMasterType(int id)
     {
         var masterType = await _genericRepository.GetByIdAsync(id);
         if (masterType == null)
-            return NotFound();
+            return BadRequest("invalid Master Type Id!");
 
-        return Ok(masterType);
+        var mappedData = _mapper.Map<GetMasterTypeDto>(masterType);
+        return Ok(mappedData);
     }
 
     [HttpPost]
-    public async Task<ActionResult<MasterType>> CreateMasterType(CreateMasterTypeDto masterType)
+    public async Task<ActionResult<GetMasterTypeDto>> CreateMasterType(CreateMasterTypeDto masterType)
     {
         try
         {
+            if (masterType.ParentId != null || masterType.ParentId == 0)
+            {
+                var selfType = await _genericRepository.GetByIdAsync((int)masterType.ParentId);
+                if (selfType == null)
+                {
+                    return BadRequest($"invalid  Parent id {masterType.ParentId} ");
+                }
+            }
             var masterTypes = _mapper.Map<MasterType>(masterType);
+            masterTypes.IsDelete = false;
+            masterTypes.IsActive = true;
+            masterTypes.Date=DateTime.Now;
             var createdMasterType = await _genericRepository.AddAsync(masterTypes);
-            return createdMasterType;
+            var mappedData = _mapper.Map<GetMasterTypeDto>(createdMasterType);
+            return mappedData;
         }
         catch (Exception ex)
         {
@@ -50,15 +67,30 @@ public class MasterTypesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateMasterType(int id, MasterType masterType)
+    public async Task<ActionResult<GetMasterTypeDto>> UpdateMasterType(int id, CreateMasterTypeDto masterTypeDto)
     {
-        var data = await _genericRepository.GetByIdAsync(id);
-        if (data == null)
-            return BadRequest("invalid Master Type id");
+        var existingMasterType = await _genericRepository.GetByIdAsync(id);
+        if (existingMasterType == null)
+            return BadRequest("Invalid Master Type Id");
 
-        await _genericRepository.UpdateAsync(id, masterType);
+        if (masterTypeDto.ParentId != null || masterTypeDto.ParentId == 0)
+        {
+            var selfType = await _genericRepository.GetByIdAsync((int)masterTypeDto.ParentId);
+            if (selfType == null)
+            {
+                return BadRequest($"invalid  Parent id {masterTypeDto.ParentId} ");
+            }
+        }
+        _mapper.Map(masterTypeDto, existingMasterType);
 
-        return Ok("Master Type Updated!");
+        var updatedMasterType = await _genericRepository.UpdateAsync(id, existingMasterType);
+
+        if (updatedMasterType == null)
+            return StatusCode(StatusCodes.Status500InternalServerError, "Error updating master type");
+
+        var updatedMasterTypeDto = _mapper.Map<GetMasterTypeDto>(updatedMasterType);
+        return Ok(updatedMasterTypeDto);
+
     }
 
     [HttpDelete("{id}")]
@@ -70,5 +102,13 @@ public class MasterTypesController : ControllerBase
 
         await _genericRepository.RemoveAsync(masterType);
         return Ok("Master Type delete successfully");
+    }
+
+    [HttpPut]
+    [Route("activate/deactivate")]
+    public async Task<IActionResult> UpdateMasterTypeIsActive(int id)
+    {
+        var data = await _masterTypeRepository.UpdateIsActive(id);
+        return Ok($"Master type data is {data}");
     }
 }

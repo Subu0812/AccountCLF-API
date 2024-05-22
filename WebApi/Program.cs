@@ -18,25 +18,21 @@ using AccountCLF.Application.Contract.Services.EmailService;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddControllers().AddJsonOptions(x =>
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "AllowOrigin",
         builder =>
 
-            builder//AllowAnyOrigin()
+            builder
+            .AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader()
-             .SetIsOriginAllowed((host) => true)
-
-        .AllowCredentials()
         );
 });
 builder.Services.AddAuthentication(opt =>
@@ -102,6 +98,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var connection = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<DataContext>(
@@ -118,8 +115,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 
 
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 
@@ -136,25 +132,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowOrigin");
 
 app.UseHttpsRedirection();
 
-app.UseHsts();
-app.UseCors("AllowOrigin");
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    app.UseHttpsRedirection();
-}
 
 app.MapControllers();
 app.Run();

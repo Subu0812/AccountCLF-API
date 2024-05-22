@@ -12,9 +12,4 @@ public class CreateMasterTypeDetailDto
 
     public int? TypeId { get; set; }
 
-    public int? IsActive { get; set; }
-
-    public int? IsDelete { get; set; }
-
-    public DateTime? Date { get; set; }
 }

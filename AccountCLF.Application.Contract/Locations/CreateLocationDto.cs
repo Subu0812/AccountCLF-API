@@ -20,6 +20,5 @@ namespace AccountCLF.Application.Contract.Locations
 
         public int? TypeId { get; set; }
 
-        public int? IsActive { get; set; }
     }
 }
