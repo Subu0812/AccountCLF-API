@@ -4,8 +4,8 @@ namespace AccountCLF.Data.Repository.MasterTypeDetails
 {
     public interface IMasterTypeRepository
     {
-        Task<bool> UpdateIsActive(int id);
-        Task<bool> UpdateDetailsIsActive(int id);
+        Task<MasterType> UpdateIsActive(int id);
+        Task<MasterTypeDetail> UpdateDetailsIsActive(int id);
         Task<List<MasterTypeDetail>> GetByTypeName(string name);
         Task<List<MasterTypeDetail>> Get();
         Task<MasterTypeDetail> GetById(int id);

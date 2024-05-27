@@ -20,29 +20,29 @@ namespace AccountCLF.Data.Repository.MasterTypeDetails
             return data;
         }
 
-        public async Task<bool> UpdateIsActive(int id)
+        public async Task<MasterType> UpdateIsActive(int id)
         {
             var data = await _dataContext.MasterTypes.FindAsync(id);
             if (data == null)
             {
-                return false;
+                return null;
             }
             data.IsActive = !data.IsActive;
             _dataContext.MasterTypes.Update(data);
             await _dataContext.SaveChangesAsync();
-            return true;
+            return data;
         }
-        public async Task<bool> UpdateDetailsIsActive(int id)
+        public async Task<MasterTypeDetail> UpdateDetailsIsActive(int id)
         {
             var data = await _dataContext.MasterTypeDetails.FindAsync(id);
             if (data == null)
             {
-                return false;
+                return null;
             }
             data.IsActive = !data.IsActive;
             _dataContext.MasterTypeDetails.Update(data);
             await _dataContext.SaveChangesAsync();
-            return true;
+            return data;
         }
 
         public async Task<List<MasterTypeDetail>> Get()

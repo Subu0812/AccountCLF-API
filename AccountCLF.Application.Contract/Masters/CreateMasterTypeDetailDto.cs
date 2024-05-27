@@ -11,5 +11,8 @@ public class CreateMasterTypeDetailDto
     public int? ParentId { get; set; }
 
     public int? TypeId { get; set; }
+    public bool? IsActive { get; set; }
+
+    public bool? IsDelete { get; set; }
 
 }

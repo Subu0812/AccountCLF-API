@@ -14,10 +14,10 @@ public class LocationsController : ControllerBase
 {
     private readonly IGenericRepository<Location> _genericRepository;
     private readonly IMapper _mapper;
-    private readonly IGenericRepository<MasterType> _masterGenericRepository;
+    private readonly IGenericRepository<MasterTypeDetail> _masterGenericRepository;
     private readonly ILocationRepository _locationRepository;
 
-    public LocationsController(IGenericRepository<Location> genericRepository, IMapper mapper, IGenericRepository<MasterType> masterGenericRepository,
+    public LocationsController(IGenericRepository<Location> genericRepository, IMapper mapper, IGenericRepository<MasterTypeDetail> masterGenericRepository,
         ILocationRepository locationRepository)
     {
         _genericRepository = genericRepository;
@@ -26,7 +26,7 @@ public class LocationsController : ControllerBase
         _locationRepository = locationRepository;
     }
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<GetLocationDto>>> GetLocations()
+    public async Task<ActionResult<List<GetLocationDto>>> GetLocations()
     {
         var locations = await _locationRepository.Get();
         if (locations == null)
@@ -52,8 +52,11 @@ public class LocationsController : ControllerBase
     [Route("activate/deactivate")]
     public async Task<IActionResult> UpdatIsActive(int id)
     {
-        await _locationRepository.UpdateIsActive(id);
-        return Ok("location Update Successfully");
+        var location = await _locationRepository.GetById(id);
+        if (location == null)
+            return BadRequest("invalid Location Id");
+      var data =  await _locationRepository.UpdateIsActive(id);
+        return Ok($"location Data is {data.IsActive}");
     }
 
     [HttpPost]
@@ -66,12 +69,12 @@ public class LocationsController : ControllerBase
             {
                 return BadRequest("invalid Type id ");
             }
-            if (locationDto.ParentId != null ||locationDto.ParentId!=0)
+            if (locationDto.ParentId.HasValue && locationDto.ParentId.Value != 0)
             {
                 var location = await _genericRepository.GetByIdAsync((int)locationDto.ParentId);
                 if (location == null)
                 {
-                    return BadRequest("invalid Type id ");
+                    return BadRequest("invalid parent id ");
                 }
             }
             var mappedData = _mapper.Map<Location>(locationDto);
@@ -99,12 +102,12 @@ public class LocationsController : ControllerBase
         {
             return BadRequest("invalid Type id ");
         }
-        if (location.ParentId != null || location.ParentId != 0)
+        if (location.ParentId.HasValue && location.ParentId.Value != 0)
         {
             var locations = await _genericRepository.GetByIdAsync((int)location.ParentId);
             if (locations == null)
             {
-                return BadRequest("invalid Type id ");
+                return BadRequest("invalid parent id ");
             }
         }
         var mappedData = _mapper.Map(location, existingLocation);

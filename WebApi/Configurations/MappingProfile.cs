@@ -12,11 +12,13 @@ namespace WebApi.Configurations
         {
             CreateMap<CreateMasterTypeDto, MasterType>();
             CreateMap< MasterType, GetMasterTypeDto>();
+            CreateMap< MasterTypeDetail, GetMasterTypeDto>();
 
             CreateMap<CreateMasterTypeDetailDto, MasterTypeDetail>();
             CreateMap< MasterTypeDetail,GetMasterTypeDetailsDto>();
 
             CreateMap<CreateLocationDto, Location>();
+            CreateMap< Location,GetLocationDto>();
         }
     }
 }

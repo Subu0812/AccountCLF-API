@@ -17,6 +17,8 @@ using AccountCLF.Application.Contract.Services.EmailService;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddControllers().AddJsonOptions(x =>
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
@@ -114,7 +116,6 @@ builder.Services.AddScoped<IEmailAppService, EmailAppService>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 
-builder.Services.AddControllers();
 
 
 var app = builder.Build();
@@ -132,6 +133,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        if (!context.Response.Headers.ContainsKey("Access-Control-Allow-Origin"))
+        {
+            context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        }
+        return Task.CompletedTask;
+    });
+    await next();
+});
 app.UseCors("AllowOrigin");
 
 app.UseHttpsRedirection();

@@ -63,7 +63,7 @@ public class MasterTypeDetailController : ControllerBase
             {
                 return BadRequest("invalid Type id ");
             }
-            if(masterTypeDetail.ParentId != null||masterTypeDetail.ParentId==0)
+            if(masterTypeDetail.ParentId.HasValue&&masterTypeDetail.ParentId!=0)
             {
                 var selfType = await _genericRepository.GetByIdAsync((int)masterTypeDetail.ParentId);
                 if (selfType == null)
@@ -73,8 +73,6 @@ public class MasterTypeDetailController : ControllerBase
             }
            
             var masterTypeDetails = _mapper.Map<MasterTypeDetail>(masterTypeDetail);
-            masterTypeDetails.IsActive = true;
-            masterTypeDetails.IsDelete= false;
             masterTypeDetails.Date= DateTime.Now;
             var createdMasterTypeDetail = await _genericRepository.AddAsync(masterTypeDetails);
             return createdMasterTypeDetail;
@@ -86,13 +84,30 @@ public class MasterTypeDetailController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateMasterTypeDetail(int id, MasterTypeDetail MasterTypeDetail)
+    public async Task<IActionResult> UpdateMasterTypeDetail(int id, CreateMasterTypeDetailDto MasterTypeDetail)
     {
         var data = await _genericRepository.GetByIdAsync(id);
         if (data == null)
-            return NotFound("Master Type Detail not found");
+            return BadRequest("invalid Master Type Detail");
+        if (MasterTypeDetail.TypeId.HasValue)
+        {
+            var masterType = await _masterGenericRepository.GetByIdAsync((int)MasterTypeDetail.TypeId);
+            if (masterType == null)
+            {
+                return BadRequest("invalid Type id ");
+            }
+        }
+        if (MasterTypeDetail.ParentId.HasValue && MasterTypeDetail.ParentId != 0)
+        {
+            var selfType = await _genericRepository.GetByIdAsync((int)MasterTypeDetail.ParentId);
+            if (selfType == null)
+            {
+                return BadRequest($"invalid  Parent id {MasterTypeDetail.ParentId} ");
+            }
+        }
+        var masterTypeDetails = _mapper.Map(MasterTypeDetail, data);
 
-        await _genericRepository.UpdateAsync(id, MasterTypeDetail);
+        await _genericRepository.UpdateAsync(id, masterTypeDetails);
 
         return Ok("Master Type Updated!");
     }
@@ -101,8 +116,11 @@ public class MasterTypeDetailController : ControllerBase
     [Route("activate/deactivate")]
     public async Task<IActionResult> UpdateMasterTypeDetailIsActive(int id)
     {
-     var data=   await _masterTypeRepository.UpdateDetailsIsActive(id);
-        return Ok($"Master type detail data is {data}");
+        var data = await _genericRepository.GetByIdAsync(id);
+        if (data == null)
+            return BadRequest("invalid Master Type Detail");
+          await _masterTypeRepository.UpdateDetailsIsActive(id);
+        return Ok($"Master type detail data is {data.IsActive}");
     }
 
 

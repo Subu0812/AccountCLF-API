@@ -44,7 +44,7 @@ public class MasterTypesController : ControllerBase
     {
         try
         {
-            if (masterType.ParentId != null || masterType.ParentId == 0)
+            if (masterType.ParentId != null || masterType.ParentId != 0)
             {
                 var selfType = await _genericRepository.GetByIdAsync((int)masterType.ParentId);
                 if (selfType == null)
@@ -53,8 +53,6 @@ public class MasterTypesController : ControllerBase
                 }
             }
             var masterTypes = _mapper.Map<MasterType>(masterType);
-            masterTypes.IsDelete = false;
-            masterTypes.IsActive = true;
             masterTypes.Date=DateTime.Now;
             var createdMasterType = await _genericRepository.AddAsync(masterTypes);
             var mappedData = _mapper.Map<GetMasterTypeDto>(createdMasterType);
@@ -108,7 +106,10 @@ public class MasterTypesController : ControllerBase
     [Route("activate/deactivate")]
     public async Task<IActionResult> UpdateMasterTypeIsActive(int id)
     {
+        var masterType = await _genericRepository.GetByIdAsync(id);
+        if (masterType == null)
+            return BadRequest("invalid Master Type");
         var data = await _masterTypeRepository.UpdateIsActive(id);
-        return Ok($"Master type data is {data}");
+        return Ok($"Master type data is {data.IsActive}");
     }
 }

@@ -13,9 +13,9 @@ public partial class BasicProfile
 
     public string? Name { get; set; }
 
-    public int? Designation { get; set; }
+    public int? DesignationId { get; set; }
 
-    public virtual MasterTypeDetail? DesignationNavigation { get; set; }
+    public virtual Designation? Designation { get; set; }
 
     public virtual Entity? Entity { get; set; }
 }

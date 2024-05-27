@@ -17,11 +17,11 @@ public partial class MasterTypeDetail
 
     public int? TypeId { get; set; }
 
-    public bool? IsActive { get; set; }
+    public DateTime? Date { get; set; }
 
     public bool? IsDelete { get; set; }
 
-    public DateTime? Date { get; set; }
+    public bool? IsActive { get; set; }
 
     public virtual ICollection<AddressDetail> AddressDetails { get; set; } = new List<AddressDetail>();
 
@@ -29,9 +29,11 @@ public partial class MasterTypeDetail
 
     public virtual ICollection<BankDetail> BankDetailPaymentModes { get; set; } = new List<BankDetail>();
 
-    public virtual ICollection<BasicProfile> BasicProfiles { get; set; } = new List<BasicProfile>();
-
     public virtual ICollection<ContactProfile> ContactProfiles { get; set; } = new List<ContactProfile>();
+
+    public virtual ICollection<Designation> DesignationDepartments { get; set; } = new List<Designation>();
+
+    public virtual ICollection<Designation> DesignationDesignationNavigations { get; set; } = new List<Designation>();
 
     public virtual ICollection<DocumentProfile> DocumentProfileDocExtensions { get; set; } = new List<DocumentProfile>();
 

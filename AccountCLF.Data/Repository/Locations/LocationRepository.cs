@@ -30,7 +30,7 @@ namespace AccountCLF.Data.Repository.Locations
                 .FirstOrDefaultAsync(x=>x.Id==id);
         }
 
-        public async Task<bool> UpdateIsActive(int id)
+        public async Task<Location> UpdateIsActive(int id)
         {
             var data = await _dataContext.Locations.FindAsync(id);
             if (data != null)
@@ -38,9 +38,9 @@ namespace AccountCLF.Data.Repository.Locations
                 data.IsActive = !data.IsActive;
                 _dataContext.Locations.Update(data);
                 await _dataContext.SaveChangesAsync();
-                return true;
+                return data;
             }
-            return false;
+            return null;
         }
     }
 }

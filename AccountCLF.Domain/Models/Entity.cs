@@ -33,6 +33,8 @@ public partial class Entity
 
     public virtual ICollection<ContactProfile> ContactProfiles { get; set; } = new List<ContactProfile>();
 
+    public virtual ICollection<Designation> Designations { get; set; } = new List<Designation>();
+
     public virtual ICollection<DocumentProfile> DocumentProfiles { get; set; } = new List<DocumentProfile>();
 
     public virtual ICollection<Entity> InverseReference { get; set; } = new List<Entity>();
@@ -50,4 +52,6 @@ public partial class Entity
     public virtual Entity? Staff { get; set; }
 
     public virtual MasterTypeDetail? Type { get; set; }
+
+    public virtual ICollection<VoucherSrNo> VoucherSrNos { get; set; } = new List<VoucherSrNo>();
 }
