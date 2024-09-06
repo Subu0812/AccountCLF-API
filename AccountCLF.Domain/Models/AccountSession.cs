@@ -17,5 +17,11 @@ public partial class AccountSession
 
     public int? IsShow { get; set; }
 
+    public virtual ICollection<Daybook> Daybooks { get; set; } = new List<Daybook>();
+
     public virtual ICollection<Entity> Entities { get; set; } = new List<Entity>();
+
+    public virtual ICollection<TransFund> TransFunds { get; set; } = new List<TransFund>();
+
+    public virtual ICollection<VoucherSrNo> VoucherSrNos { get; set; } = new List<VoucherSrNo>();
 }

@@ -23,6 +23,8 @@ public partial class MasterTypeDetail
 
     public bool? IsActive { get; set; }
 
+    public string? Value { get; set; }
+
     public virtual ICollection<AddressDetail> AddressDetails { get; set; } = new List<AddressDetail>();
 
     public virtual ICollection<BankDetail> BankDetailBanks { get; set; } = new List<BankDetail>();
@@ -46,6 +48,22 @@ public partial class MasterTypeDetail
     public virtual ICollection<Location> Locations { get; set; } = new List<Location>();
 
     public virtual MasterTypeDetail? Parent { get; set; }
+
+    public virtual ICollection<TransFundBillingDetail> TransFundBillingDetails { get; set; } = new List<TransFundBillingDetail>();
+
+    public virtual ICollection<TransFundDetail> TransFundDetails { get; set; } = new List<TransFundDetail>();
+
+    public virtual ICollection<TransFund> TransFundFranchises { get; set; } = new List<TransFund>();
+
+    public virtual ICollection<TransFund> TransFundLedgerHeads { get; set; } = new List<TransFund>();
+
+    public virtual ICollection<TransFund> TransFundPayModeNavigations { get; set; } = new List<TransFund>();
+
+    public virtual ICollection<TransFundPaymentDetail> TransFundPaymentDetailBanks { get; set; } = new List<TransFundPaymentDetail>();
+
+    public virtual ICollection<TransFundPaymentDetail> TransFundPaymentDetailPaymentModes { get; set; } = new List<TransFundPaymentDetail>();
+
+    public virtual ICollection<TransFundPaymentDetail> TransFundPaymentDetailTransTypeNavigations { get; set; } = new List<TransFundPaymentDetail>();
 
     public virtual MasterType? Type { get; set; }
 }

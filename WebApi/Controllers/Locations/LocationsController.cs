@@ -60,14 +60,16 @@ public class LocationsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<GetLocationDto>> CreateLocation(CreateLocationDto locationDto)
+    public async Task<ActionResult> CreateLocation(CreateLocationDto locationDto)
     {
-        try
-        {
-            var masterType = await _masterGenericRepository.GetByIdAsync((int)locationDto.TypeId);
-            if (masterType == null)
+        
+            if (locationDto.TypeId.HasValue)
             {
-                return BadRequest("invalid Type id ");
+                var masterType = await _masterGenericRepository.GetByIdAsync((int)locationDto.TypeId);
+                if (masterType == null)
+                {
+                    return BadRequest("invalid Type id ");
+                }
             }
             if (locationDto.ParentId.HasValue && locationDto.ParentId.Value != 0)
             {
@@ -80,14 +82,7 @@ public class LocationsController : ControllerBase
             var mappedData = _mapper.Map<Location>(locationDto);
             mappedData.IsActive = true;
             var createdLocation = await _genericRepository.AddAsync(mappedData);
-            var GetMappedData = _mapper.Map<GetLocationDto>(createdLocation);
-
-            return GetMappedData;
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, "Error creating location: " + ex.Message);
-        }
+            return Ok("Location Created successfully"); 
     }
 
     [HttpPut("{id}")]
@@ -124,5 +119,44 @@ public class LocationsController : ControllerBase
             return BadRequest(" invalid Location id");
         await _genericRepository.RemoveAsync(location);
         return Ok("Location Delete Successfully");
+    }
+
+    [HttpGet]
+    [Route("state")]
+    public async Task<ActionResult<List<GetLocationDto>>> Getstates()
+    {
+        var locations = await _locationRepository.GetState();
+        if (locations == null)
+        {
+            return NotFound("Data Not Found");
+        }
+        var mappedData = _mapper.Map<List<GetLocationDto>>(locations);
+        return Ok(mappedData);
+    }
+
+    [HttpGet]
+    [Route("city/{stateId}")]
+    public async Task<ActionResult<List<GetLocationDto>>> GetCityByStateId(int stateId)
+    {
+        var locations = await _locationRepository.GetCityByStateId(stateId);
+        if (locations == null)
+        {
+            return NotFound("Data Not Found");
+        }
+        var mappedData = _mapper.Map<List<GetLocationDto>>(locations);
+        return Ok(mappedData);
+    }
+
+    [HttpGet]
+    [Route("block/{cityId}")]
+    public async Task<ActionResult<List<GetLocationDto>>> GetBlockByCityId(int cityId)
+    {
+        var locations = await _locationRepository.GetBlockByCityId(cityId);
+        if (locations == null)
+        {
+            return NotFound("Data Not Found");
+        }
+        var mappedData = _mapper.Map<List<GetLocationDto>>(locations);
+        return Ok(mappedData);
     }
 }

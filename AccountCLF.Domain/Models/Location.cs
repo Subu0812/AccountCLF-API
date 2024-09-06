@@ -27,5 +27,7 @@ public partial class Location
 
     public virtual Location? Parent { get; set; }
 
+    public virtual ICollection<TransFundBillingDetail> TransFundBillingDetails { get; set; } = new List<TransFundBillingDetail>();
+
     public virtual MasterTypeDetail? Type { get; set; }
 }

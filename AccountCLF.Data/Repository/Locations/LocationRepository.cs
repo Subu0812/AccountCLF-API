@@ -6,8 +6,8 @@ namespace AccountCLF.Data.Repository.Locations
 {
     public class LocationRepository : ILocationRepository
     {
-        private readonly DataContext _dataContext;
-        public LocationRepository(DataContext dataContext)
+        private readonly AccountClfContext _dataContext;
+        public LocationRepository(AccountClfContext dataContext)
         {
             _dataContext = dataContext;
         }
@@ -17,8 +17,14 @@ namespace AccountCLF.Data.Repository.Locations
             return await _dataContext.Locations
                 .Include(x=>x.Type)
                 .Include(x=>x.Parent)
-                .ThenInclude(x=>x.Type)
                 .ToListAsync();
+        }
+
+        public async Task<List<Location>> GetBlockByCityId(int cityId)
+        {
+            return await _dataContext.Locations
+                            .Where(x => x.ParentId == (int)cityId)
+                            .ToListAsync();
         }
 
         public async Task<Location> GetById(int id)
@@ -28,6 +34,21 @@ namespace AccountCLF.Data.Repository.Locations
                 .Include(x => x.Parent)
                 .ThenInclude(x => x.Type)
                 .FirstOrDefaultAsync(x=>x.Id==id);
+        }
+
+        public async Task<List<Location>> GetCityByStateId(int stateId)
+        {
+            return await _dataContext.Locations
+                .Where(x=>x.ParentId==(int)stateId)
+                .ToListAsync();
+        }
+
+        public async Task<List<Location>> GetState()
+        {
+         return await _dataContext.Locations
+                .Include(x=>x.Type).Include(x=>x.Parent)
+                .Where(x=>x.Type.Name.ToLower()=="state")
+                .ToListAsync();
         }
 
         public async Task<Location> UpdateIsActive(int id)

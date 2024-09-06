@@ -58,12 +58,15 @@ public class MasterTypeDetailController : ControllerBase
     {
         try
         {
-            var masterType = await _masterGenericRepository.GetByIdAsync((int)masterTypeDetail.TypeId);
-            if (masterType == null)
-            {
-                return BadRequest("invalid Type id ");
+            if(masterTypeDetail.TypeId.HasValue)
+                {
+                var masterType = await _masterGenericRepository.GetByIdAsync((int)masterTypeDetail.TypeId);
+                if (masterType == null)
+                {
+                    return BadRequest("invalid Type id ");
+                }
             }
-            if(masterTypeDetail.ParentId.HasValue&&masterTypeDetail.ParentId!=0)
+            if(masterTypeDetail.ParentId.HasValue)
             {
                 var selfType = await _genericRepository.GetByIdAsync((int)masterTypeDetail.ParentId);
                 if (selfType == null)

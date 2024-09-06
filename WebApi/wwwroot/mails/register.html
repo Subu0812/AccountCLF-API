@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Confirmation</title>
+</head>
+<body style="font-family: 'Arial', sans-serif;">
+
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+
+        <h2 style="color: #333;">Welcome to Your Website!</h2>
+
+        <p>Dear {{user_name}},</p>
+
+        <p>Thank you for registering with us. We are excited to have you on board!</p>
+
+        <p>Your account details:</p>
+
+        <ul>
+            <li><strong>Name:</strong> {{user_name}}</li>
+            <li><strong>Email:</strong>"{{user_email}}" </li>
+            <!-- Add more user details as needed -->
+        </ul>
+
+        <p>We look forward to serving you and providing a great experience.</p>
+
+        <p>If you have any questions or need assistance, feel free to contact our support team at <a href="mailto:support@example.com">support@example.com</a>.</p>
+
+        <p>
+            Best regards,<br>
+            Your Website Team
+        </p>
+
+    </div>
+
+</body>
+</html>

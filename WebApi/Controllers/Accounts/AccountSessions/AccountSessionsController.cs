@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 
-namespace WebApi.Controllers.AccountSessions
+namespace WebApi.Controllers.Accounts.AccountSessions
 {
     [Route("api/accountsession")]
     [ApiController]

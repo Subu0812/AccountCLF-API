@@ -44,7 +44,7 @@ public class MasterTypesController : ControllerBase
     {
         try
         {
-            if (masterType.ParentId != null || masterType.ParentId != 0)
+            if (masterType.ParentId.HasValue)
             {
                 var selfType = await _genericRepository.GetByIdAsync((int)masterType.ParentId);
                 if (selfType == null)

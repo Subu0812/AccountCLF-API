@@ -6,8 +6,8 @@ namespace AccountCLF.Data.Repository.MasterTypeDetails
 {
     public class MasterTypeRepository : IMasterTypeRepository
     {
-        private readonly DataContext _dataContext;
-        public MasterTypeRepository(DataContext dataContext)
+        private readonly AccountClfContext _dataContext;
+        public MasterTypeRepository(AccountClfContext dataContext)
         {
             _dataContext = dataContext;
         }

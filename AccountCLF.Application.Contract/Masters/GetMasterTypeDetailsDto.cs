@@ -24,6 +24,8 @@ namespace AccountCLF.Application.Contract.Masters
         public bool? IsActive { get; set; }
 
         public bool? IsDelete { get; set; }
+        public string? Value { get; set; }
+
 
         public DateTime? Date { get; set; }
         public  GetMasterTypeDto? Type { get; set; }

@@ -1,4 +1,5 @@
-﻿using AccountCLF.Application.Contract.Masters.MasterType;
+﻿using AccountCLF.Application.Contract.Masters;
+using AccountCLF.Application.Contract.Masters.MasterType;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace AccountCLF.Application.Contract.Locations
 
         public GetParentLocationDto? Parent { get; set; }
 
-        public  GetMasterTypeDto? Type { get; set; }
+        public  GetMasterTypeDetailsDto? Type { get; set; }
 
         public class GetParentLocationDto
         {

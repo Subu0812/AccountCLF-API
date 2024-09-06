@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 
-namespace WebApi.Controllers.AccountGroups
+namespace WebApi.Controllers.Accounts.AccountGroups
 {
     [Route("api/accountgroup")]
     [ApiController]

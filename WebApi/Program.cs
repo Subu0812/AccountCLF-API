@@ -14,6 +14,10 @@ using AccountCLF.Data.Repository.Locations;
 using WebApi.Configurations;
 using AccountCLF.Application.Contract.Services.WhatsappService;
 using AccountCLF.Application.Contract.Services.EmailService;
+using AccountCLF.Data.Repository.Entities;
+using AccountCLF.Data.Repository.OTPS;
+using AccountCLF.Data.Repository.Daybooks;
+using AccountCLF.Data.Repository.LoanAccounts;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,7 +62,7 @@ builder.Services.AddAuthentication(opt =>
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Lms Api", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Account CLF Api", Version = "v1" });
 
     c.CustomOperationIds(apiDesc =>
     {
@@ -103,7 +107,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var connection = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<DataContext>(
+builder.Services.AddDbContext<AccountClfContext>(
    x => x.UseSqlServer(connection));
 
 
@@ -111,6 +115,11 @@ builder.Services.AddScoped<IMasterTypeRepository, MasterTypeRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IWhatsappAppService, WhatsappAppService>();
 builder.Services.AddScoped<IEmailAppService, EmailAppService>();
+builder.Services.AddScoped<IEntityRepository, EntityRepository>();
+builder.Services.AddScoped<IOtpRepository, OtpRepository>();
+builder.Services.AddScoped<IDayBookRepository, DayBookRepository>();
+builder.Services.AddScoped<ILoanAccountRepository, LoanRepository>();
+
 
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
