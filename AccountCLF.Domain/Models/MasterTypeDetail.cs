@@ -27,15 +27,11 @@ public partial class MasterTypeDetail
 
     public virtual ICollection<AddressDetail> AddressDetails { get; set; } = new List<AddressDetail>();
 
-    public virtual ICollection<BankDetail> BankDetailBanks { get; set; } = new List<BankDetail>();
-
-    public virtual ICollection<BankDetail> BankDetailPaymentModes { get; set; } = new List<BankDetail>();
+    public virtual ICollection<BankDetail> BankDetails { get; set; } = new List<BankDetail>();
 
     public virtual ICollection<ContactProfile> ContactProfiles { get; set; } = new List<ContactProfile>();
 
-    public virtual ICollection<Designation> DesignationDepartments { get; set; } = new List<Designation>();
-
-    public virtual ICollection<Designation> DesignationDesignationNavigations { get; set; } = new List<Designation>();
+    public virtual ICollection<Designation> Designations { get; set; } = new List<Designation>();
 
     public virtual ICollection<DocumentProfile> DocumentProfileDocExtensions { get; set; } = new List<DocumentProfile>();
 
@@ -64,6 +60,8 @@ public partial class MasterTypeDetail
     public virtual ICollection<TransFundPaymentDetail> TransFundPaymentDetailPaymentModes { get; set; } = new List<TransFundPaymentDetail>();
 
     public virtual ICollection<TransFundPaymentDetail> TransFundPaymentDetailTransTypeNavigations { get; set; } = new List<TransFundPaymentDetail>();
+
+    public virtual ICollection<TransFundTd> TransFundTds { get; set; } = new List<TransFundTd>();
 
     public virtual MasterType? Type { get; set; }
 }

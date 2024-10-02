@@ -17,6 +17,7 @@ namespace AccountCLF.Data.Repository.Daybooks
             return await _dataContext.Daybooks
                 .Include(x => x.FundReference) 
                 .ThenInclude(x=>x.TransFundTds)
+                .ThenInclude(x=>x.Section)
                 .Include(x => x.Account)
                 .Include(x => x.Franchise) 
                     .ThenInclude(f => f.BasicProfiles) 

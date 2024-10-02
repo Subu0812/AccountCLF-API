@@ -52,7 +52,10 @@ namespace AccountCLF.Data.Repository.MasterTypeDetails
 
         public async Task<MasterTypeDetail> GetById(int id)
         {
-            return await _dataContext.MasterTypeDetails.Include(x => x.Type).FirstOrDefaultAsync(x => x.Id == id);
+            return await _dataContext.MasterTypeDetails
+                .Include(x =>x.Parent)
+                .Include(x => x.Type)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
     }
 }

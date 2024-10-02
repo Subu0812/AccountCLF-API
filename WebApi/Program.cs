@@ -110,7 +110,7 @@ var connection = builder.Configuration.GetConnectionString("Default");
 builder.Services.AddDbContext<AccountClfContext>(
    x => x.UseSqlServer(connection));
 
-
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<IMasterTypeRepository, MasterTypeRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IWhatsappAppService, WhatsappAppService>();

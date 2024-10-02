@@ -25,6 +25,8 @@ public partial class DocumentProfile
 
     public int? IsActive { get; set; }
 
+    public string? Name { get; set; }
+
     public virtual MasterTypeDetail? DocExtension { get; set; }
 
     public virtual MasterTypeDetail? DocTypeNavigation { get; set; }

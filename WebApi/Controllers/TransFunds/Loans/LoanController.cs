@@ -87,43 +87,43 @@ namespace WebApi.Controllers.TransFunds.Loans
 
 
 
-        //[HttpGet("loanDetail/view/{loanaccountid}")]
-        //public async Task<ActionResult<List<GetLoanDetailDto>>> GetLoanDetailByLoanAccountId(int loanaccountid)
-        //{
-        //    var loanAccountDetails = await _loanRepository1.GetLoanDetailByLoanAccountId(loanaccountid);
-        //    if (loanAccountDetails == null || !loanAccountDetails.Any())
-        //    {
-        //        return NotFound($"Data not found for Loan Account Id ");
-        //    }
-        //    var reportList = new List<GetLoanDetailDto>();
-        //    decimal PaidAmount = 0;
-        //    decimal pendingAmount = 0;
-        //    foreach (var account in loanAccountDetails)
-        //    {
-        //        if (account.Status == true)
-        //        {
-        //            PaidAmount += (decimal)account.PayableAmount;
-        //        }
-        //        else
-        //        {
-        //            pendingAmount += (decimal)account.PayableAmount;
-        //        }
+        [HttpGet("loanDetail/view/{loanaccountid}")]
+        public async Task<ActionResult<List<GetLoanDetailDto>>> GetLoanDetailByLoanAccountId(int loanaccountid)
+        {
+            var loanAccountDetails = await _loanRepository1.GetLoanDetailByLoanAccountId(loanaccountid);
+            if (loanAccountDetails == null || !loanAccountDetails.Any())
+            {
+                return NotFound($"Data not found for Loan Account Id ");
+            }
+            var reportList = new List<GetLoanDetailDto>();
+            decimal PaidAmount = 0;
+            decimal pendingAmount = 0;
+            foreach (var account in loanAccountDetails)
+            {
+                if (account.Status == true)
+                {
+                    PaidAmount += (decimal)account.PayableAmount;
+                }
+                else
+                {
+                    pendingAmount += (decimal)account.PayableAmount;
+                }
 
-        //        var report = new GetLoanDetailDto
-        //        {
-        //            Id = account.Id,
-        //            EmiMonth = account.EmiMonth,
-        //            LoanAmount = account.LoanAmount,
-        //            InterestAmount = account.InterestAmount,
-        //            PayableAmount = account.PayableAmount,
-        //            DueDate = account.DueDate,
-        //            Status = account.Status,
+                var report = new GetLoanDetailDto
+                {
+                    Id = account.Id,
+                    EmiMonth = account.EmiMonth,
+                    LoanAmount = account.LoanAmount,
+                    InterestAmount = account.InterestAmount,
+                    PayableAmount = account.PayableAmount,
+                    DueDate = account.DueDate,
+                    Status = account.Status,
 
-        //        };
-        //        reportList.Add(report);
-        //    }
-        //    return Ok(reportList);
-        //}
+                };
+                reportList.Add(report);
+            }
+            return Ok(reportList);
+        }
 
 
 
@@ -219,9 +219,9 @@ namespace WebApi.Controllers.TransFunds.Loans
                     StartDate = account.StartDate?.ToString("yyyy-MM-dd") ?? "N/A",
                     EndDate = account.EndDate?.ToString("yyyy-MM-dd") ?? "N/A",    
                     InterestRate = account.LoanAccountDetails.FirstOrDefault().InterestPercentage,
-                    LoanTenure = account.Loantenure.Name
+                    LoanTenure = account.Loantenure.Name,
+                    Status=account.Status.Value,
                 };
-
                 reportList.Add(report);
             }
             return Ok(reportList);
@@ -298,7 +298,7 @@ namespace WebApi.Controllers.TransFunds.Loans
             for (int i = 0; i < loanAccountDto.EmiMonth; i++)
             {
                 decimal interestPayment = outstandingPrincipal * monthlyInterestRate;
-                decimal principalPayment = (decimal)emi - interestPayment;
+                decimal principalPayment = emi - interestPayment;
                 outstandingPrincipal -= principalPayment;
 
                 var loanAccountDetail = new LoanAccountDetail

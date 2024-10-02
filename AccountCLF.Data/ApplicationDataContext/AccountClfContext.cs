@@ -168,7 +168,7 @@ public partial class AccountClfContext : DbContext
                 .HasMaxLength(11)
                 .HasColumnName("IFSCCode");
 
-            entity.HasOne(d => d.Bank).WithMany(p => p.BankDetailBanks)
+            entity.HasOne(d => d.Bank).WithMany(p => p.BankDetails)
                 .HasForeignKey(d => d.BankId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_BankDetail_Bank");
@@ -181,11 +181,6 @@ public partial class AccountClfContext : DbContext
             entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent)
                 .HasForeignKey(d => d.ParentId)
                 .HasConstraintName("FK_BankDetail_Parent");
-
-            entity.HasOne(d => d.PaymentMode).WithMany(p => p.BankDetailPaymentModes)
-                .HasForeignKey(d => d.PaymentModeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_BankDetail_PaymentMode");
         });
 
         modelBuilder.Entity<BasicProfile>(entity =>
@@ -268,19 +263,20 @@ public partial class AccountClfContext : DbContext
 
             entity.ToTable("Designation");
 
-            entity.Property(e => e.Date).HasColumnType("datetime");
+            entity.Property(e => e.EndDate).HasColumnType("datetime");
+            entity.Property(e => e.StartDate).HasColumnType("datetime");
 
-            entity.HasOne(d => d.Department).WithMany(p => p.DesignationDepartments)
-                .HasForeignKey(d => d.DepartmentId)
-                .HasConstraintName("FK__Designati__Depar__236943A5");
-
-            entity.HasOne(d => d.DesignationNavigation).WithMany(p => p.DesignationDesignationNavigations)
+            entity.HasOne(d => d.DesignationNavigation).WithMany(p => p.Designations)
                 .HasForeignKey(d => d.DesignationId)
                 .HasConstraintName("FK__Designati__Desig__22751F6C");
 
-            entity.HasOne(d => d.Entity).WithMany(p => p.Designations)
+            entity.HasOne(d => d.Entity).WithMany(p => p.DesignationEntities)
                 .HasForeignKey(d => d.EntityId)
                 .HasConstraintName("FK__Designati__Entit__2180FB33");
+
+            entity.HasOne(d => d.Reference).WithMany(p => p.DesignationReferences)
+                .HasForeignKey(d => d.ReferenceId)
+                .HasConstraintName("FK_Designation_Entity");
         });
 
         modelBuilder.Entity<DocumentProfile>(entity =>
@@ -296,6 +292,9 @@ public partial class AccountClfContext : DbContext
                 .HasMaxLength(1000)
                 .IsUnicode(false);
             entity.Property(e => e.InsDate).HasColumnType("datetime");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.SrNo).HasColumnType("decimal(18, 2)");
 
             entity.HasOne(d => d.DocExtension).WithMany(p => p.DocumentProfileDocExtensions)
@@ -798,6 +797,10 @@ public partial class AccountClfContext : DbContext
             entity.HasOne(d => d.FundReference).WithMany(p => p.TransFundTds)
                 .HasForeignKey(d => d.FundReferenceId)
                 .HasConstraintName("FK__TransFund__PanNo__7755B73D");
+
+            entity.HasOne(d => d.Section).WithMany(p => p.TransFundTds)
+                .HasForeignKey(d => d.SectionId)
+                .HasConstraintName("FK_TransFundTds_MasterTypeDetail_SectionId");
         });
 
         modelBuilder.Entity<VoucherSrNo>(entity =>

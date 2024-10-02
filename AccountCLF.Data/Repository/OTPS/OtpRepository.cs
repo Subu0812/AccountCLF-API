@@ -51,14 +51,19 @@ namespace AccountCLF.Data.Repository.OTPS
 
         public async Task<Otp> VerifyOtp(int enittyId, int otp)
         {
-            var data = await _context.Otps.Include(x => x.Entity)
-              .Where(x => x.Otp1 == otp && x.EntityId == enittyId)
-              .FirstOrDefaultAsync();
+            var getData = await _context.Otps.Include(x => x.Entity)
+              .Where(x =>  x.EntityId == enittyId&&x.IsChecked!=true)
+              .ToListAsync();
+
+            var data = getData.OrderBy(x=>x.Id).Last();
             if (data == null)
             {
                 return null;
             }
-          
+            if (data.Otp1! != otp) 
+            {
+                return null;
+            }
             return data;
         }
         private int GenerateUniqueOTP()

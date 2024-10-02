@@ -1,4 +1,5 @@
 ﻿using AccountCLF.Application.Contract.Entities.Logins;
+using AccountCLF.Application.Contract.Masters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,18 @@ namespace AccountCLF.Application.Contract.Entities
         public int? Status { get; set; }
 
         public int? IsActive { get; set; }
+        public  GetMasterTypeDetailsDto? Type { get; set; }
+        public virtual GetAccountGroupDto? AccountType { get; set; }
+
+        public virtual GetParentEntityDto? Parent { get; set; }
+
         public List<GetBasicProfileDto> BasicProfiles { get; set; } = new List<GetBasicProfileDto>();
 
+    }
+    public class GetParentEntityDto
+    {
+        public int Id { get; set; }
+
+        public string? Name { get; set; }
     }
 }

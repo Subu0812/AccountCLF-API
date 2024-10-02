@@ -21,8 +21,6 @@ public partial class BankDetail
 
     public int BankId { get; set; }
 
-    public int PaymentModeId { get; set; }
-
     public bool IsActive { get; set; }
 
     public virtual MasterTypeDetail Bank { get; set; } = null!;
@@ -32,6 +30,4 @@ public partial class BankDetail
     public virtual ICollection<BankDetail> InverseParent { get; set; } = new List<BankDetail>();
 
     public virtual BankDetail? Parent { get; set; }
-
-    public virtual MasterTypeDetail PaymentMode { get; set; } = null!;
 }

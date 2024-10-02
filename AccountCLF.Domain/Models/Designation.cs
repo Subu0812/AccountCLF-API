@@ -11,19 +11,21 @@ public partial class Designation
 
     public int? DesignationId { get; set; }
 
-    public int? DepartmentId { get; set; }
+    public int? ReferenceId { get; set; }
 
     public bool? IsActive { get; set; }
 
     public bool? IsDefault { get; set; }
 
-    public DateTime? Date { get; set; }
+    public DateTime? StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
 
     public virtual ICollection<BasicProfile> BasicProfiles { get; set; } = new List<BasicProfile>();
-
-    public virtual MasterTypeDetail? Department { get; set; }
 
     public virtual MasterTypeDetail? DesignationNavigation { get; set; }
 
     public virtual Entity? Entity { get; set; }
+
+    public virtual Entity? Reference { get; set; }
 }

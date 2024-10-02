@@ -17,5 +17,9 @@ public partial class TransFundTd
 
     public string? PanNo { get; set; }
 
+    public int? SectionId { get; set; }
+
     public virtual TransFund? FundReference { get; set; }
+
+    public virtual MasterTypeDetail? Section { get; set; }
 }

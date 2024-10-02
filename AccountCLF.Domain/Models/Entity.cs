@@ -45,7 +45,9 @@ public partial class Entity
 
     public virtual ICollection<Daybook> DaybookStaffs { get; set; } = new List<Daybook>();
 
-    public virtual ICollection<Designation> Designations { get; set; } = new List<Designation>();
+    public virtual ICollection<Designation> DesignationEntities { get; set; } = new List<Designation>();
+
+    public virtual ICollection<Designation> DesignationReferences { get; set; } = new List<Designation>();
 
     public virtual ICollection<DocumentProfile> DocumentProfiles { get; set; } = new List<DocumentProfile>();
 

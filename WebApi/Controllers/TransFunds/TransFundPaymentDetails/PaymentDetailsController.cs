@@ -189,7 +189,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     }
                 }
 
-                var accountId = payMode.Name.ToLower() == "cash" ? 63 : payMode.Name.ToLower() == "bank" ? 65 : (int?)null;
+                var accountId = payMode.Name.ToLower() == "cash" ? 239 : payMode.Name.ToLower() == "bank" ? 237 : (int?)null;
                 var account = new Entity();
                 if (command.AccountId.HasValue)
                 {

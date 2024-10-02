@@ -37,7 +37,9 @@ namespace WebApi.Configurations
             CreateMap<CreateTransFundDto, TransFund>().ReverseMap();
 
             CreateMap<Entity,GetEntityDto>();
+            CreateMap<Entity,GetParentEntityDto>();
             CreateMap<BasicProfile,GetBasicProfileDto>();
+            CreateMap<AccountGroup,GetAccountGroupDto>();
             CreateMap<LoanAccount,LoanAccountDto>();
            
 

@@ -1,5 +1,7 @@
-﻿using AccountCLF.Application.Contract.TransFunds.TDSs;
+﻿using AccountCLF.Application.Contract.Charges_Expenses;
+using AccountCLF.Application.Contract.TransFunds.TDSs;
 using AccountCLF.Data;
+using AccountCLF.Data.Repository.Daybooks;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Model;
@@ -13,62 +15,55 @@ namespace WebApi.Controllers.TransFunds.TDSs
         private readonly IGenericRepository<TransFundTd> _transFundTdRepository;
         private readonly IGenericRepository<TransFund> _transFundGenericRepository;
         private readonly IMapper _mapper;
+        private readonly IDayBookRepository _dayBookRepository;
 
         public TDSController(IGenericRepository<TransFundTd> transFundTdRepository,
                              IGenericRepository<TransFund> transFundGenericRepository,
-                             IMapper mapper)
+                             IMapper mapper,
+                             IDayBookRepository dayBookRepository)
         {
             _transFundTdRepository = transFundTdRepository;
             _transFundGenericRepository = transFundGenericRepository;
             _mapper = mapper;
+            _dayBookRepository = dayBookRepository;
         }
 
-   
 
-        [HttpPost]
-        public async Task<ActionResult> CreateTDS(CreateTransFundTdsDto command)
+
+
+        [HttpGet]
+        [Route("user-tds/report")]
+        public async Task<ActionResult<IEnumerable<GetUserTDSDetailsDto>>> GetTDSReport(int entityId)
         {
-            var fundTrans = await _transFundGenericRepository.GetByIdAsync((int)command.FundReferenceId);
-            if (fundTrans == null)
+            var daybooksList = await _dayBookRepository.GetAccountBalance();
+            if (daybooksList == null || !daybooksList.Any())
             {
-                return BadRequest("Invalid FundReferenceId");
+                return NotFound("No tds found for the specified EntityId.");
             }
-
-            var transFundTd = _mapper.Map<CreateTransFundTdsDto, TransFundTd>(command);
-            await _transFundTdRepository.AddAsync(transFundTd);
-            return Ok("TDS Created Successfully!");
+            var filteredTdsList = daybooksList
+           .Where(db => db.FranchiseId == entityId && db.Account?.Name.ToLower() == "tds charges")
+           .Select(db => 
+           {
+                var transFundTds = db.FundReference?.TransFundTds?.FirstOrDefault(x => x.FundReferenceId == db.FundReferenceId);
+               return new GetUserTDSDetailsDto
+               {
+                   Date = db.FundReference.Date ?? db.FundReference.EntryDate,
+                   ParticularName = db.Franchise?.Name ?? "Unknown",
+                   Section = transFundTds?.Section?.Name ?? "Unknown",
+                   TaxAmount = transFundTds?.TdsableAmount ?? 0,
+                   TdsPayable = transFundTds?.Tds ?? 0
+               };
+           })
+           .ToList();
+            if (!filteredTdsList.Any())
+            {
+                return NotFound("No TDS records found for the specified EntityId.");
+            }
+            return Ok(filteredTdsList);
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateTDS(int id, CreateTransFundTdsDto command)
-        {
-            var existingTransFundTd = await _transFundTdRepository.GetByIdAsync(id);
-            if (existingTransFundTd == null)
-            {
-                return NotFound("TDS record not found.");
-            }
 
-            var fundTrans = await _transFundGenericRepository.GetByIdAsync((int)command.FundReferenceId);
-            if (fundTrans == null)
-            {
-                return BadRequest("Invalid FundReferenceId");
-            }
 
-            _mapper.Map(command, existingTransFundTd);
-            await _transFundTdRepository.UpdateAsync(id, existingTransFundTd);
-            return Ok("TDS Updated Successfully!");
-        }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteTDS(int id)
-        {
-            var transFundTd = await _transFundTdRepository.GetByIdAsync(id);
-            if (transFundTd == null)
-            {
-                return NotFound("TDS record not found.");
-            }
-            await _transFundTdRepository.RemoveAsync(transFundTd);
-            return Ok("TDS Deleted Successfully!");
-        }
     }
 }

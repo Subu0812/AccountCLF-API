@@ -5,7 +5,9 @@ using AccountCLF.Data;
 using AccountCLF.Data.Repository.Daybooks;
 using AccountCLF.Data.Repository.Entities;
 using AccountCLF.Data.Repository.LoanAccounts;
+using Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Model;
 using System.Security.Claims;
 
@@ -15,6 +17,7 @@ namespace WebApi.Controllers.Reciepts
     [ApiController]
     public class RecieptsController : ControllerBase
     {
+        private readonly AccountClfContext _dbContext;
         private readonly IGenericRepository<TransFund> _transFundRepository;
         private readonly IGenericRepository<Daybook> _dayBookGenericRepository;
         private readonly IGenericRepository<Entity> _entityGenericRepository;
@@ -44,7 +47,8 @@ namespace WebApi.Controllers.Reciepts
             ILoanAccountRepository loanRepository1,
             IGenericRepository<TransFundTd> tdsGenericRepository,
             IEntityRepository entityRepository,
-            IDayBookRepository dayBookRepository)
+            IDayBookRepository dayBookRepository,
+            AccountClfContext dbContext)
         {
             _transFundRepository = transFundRepository;
             _dayBookGenericRepository = daybookGenericRepository;
@@ -60,59 +64,47 @@ namespace WebApi.Controllers.Reciepts
             _tdsGenericRepository = tdsGenericRepository;
             _entityRepository = entityRepository;
             _dayBookRepository = dayBookRepository;
+            _dbContext = dbContext;
         }
 
 
-        [HttpGet]
-        [Route("user-tds/report")]
-        public async Task<ActionResult<IEnumerable<GetUserTDSDetailsDto>>> GetTDSReport(int entityId)
-        {
-            var daybooksList = await _dayBookRepository.GetAccountBalance();
-            if (daybooksList == null || !daybooksList.Any())
-            {
-                return NotFound("No tds found for the specified EntityId.");
-            }
-            var filteredTdsList = daybooksList
-           .Where(db => db.FranchiseId == entityId && db.Account.Name.ToLower() == "tds charges")
-           .Select(db => new GetUserTDSDetailsDto
-           {
-               Date = db.FundReference.Date??db.FundReference.EntryDate,
-               ParticularName = db.Franchise?.Name ?? "Unknown", 
-               Section = db.FundReference?.?.Name ?? "Unknown", 
-               TaxAmount = db.FundReference?.TransFundTds.FirstOrDefault(x => x.FundReferenceId == db.FundReferenceId).TdsableAmount ?? 0,
-               TdsPayable = db.FundReference?.TransFundTds.FirstOrDefault(x=>x.FundReferenceId==db.FundReferenceId).Tds ?? 0 
-           })
-           .ToList();
-            return Ok(filteredTdsList);
-        }
+
 
 
 
         [HttpGet("cash-bank/total-balance/paymode/{entityId}")]
-        public async Task<ActionResult<GetAllUserAccountBalanceDto>> GetCashBankUserTotalBalance(int entityId, int? paymodeid)
+        public async Task<ActionResult<GetAllUserAccountBalanceDto>> GetCashBankUserTotalBalance(int entityId, int? paymodeid,int bankid)
         {
             var entity = await _entityGenericRepository.GetByIdAsync(entityId);
             if (entity == null)
             {
                 return BadRequest("Entity ID is not valid.");
-            }
+            }   
+
             var filteredDaybooks = new List<Daybook>();
             var daybooks = await _dayBookRepository.GetAll();
             filteredDaybooks = daybooks
                .Where(d => d.FranchiseId == entityId)
                .ToList();
+            var payModeData = new MasterTypeDetail();
+            int accountid = 0;
             if (paymodeid != null)
             {
+                payModeData = await _masterTypeDetailRepository.GetByIdAsync((int)paymodeid);
                 filteredDaybooks = filteredDaybooks.Where(x => x.FundReference.PayMode == paymodeid).ToList();
             }
-
+            if (bankid != null)
+            {
+                accountid = payModeData.Name.ToLower() == "cash" ? 236 : payModeData.Name.ToLower() == "bank" ? 237 : 0;
+                filteredDaybooks = filteredDaybooks.Where(x=>x.AccountId== accountid).ToList(); 
+            }
+           
             if (!filteredDaybooks.Any())
             {
                 return NotFound("No records found for the given Franchise ID and PayMode ID.");
             }
 
             decimal balance = 0;
-
             foreach (var daybook in filteredDaybooks)
             {
                 if (daybook.TransType == "CR")
@@ -124,14 +116,12 @@ namespace WebApi.Controllers.Reciepts
                     balance -= daybook.Amount ?? 0;
                 }
             }
-
             var totalBalance = new GetAllUserAccountBalanceDto
             {
                 AccountBalance = balance >= 0
-        ? $"{balance:F2} CR"
-        : $"{-balance:F2} DR"
+                               ? $"{balance:F2} CR"
+                               : $"{-balance:F2} DR"
             };
-
             return Ok(totalBalance);
         }
 
@@ -203,7 +193,7 @@ namespace WebApi.Controllers.Reciepts
                 }
                 if (!filteredDaybooks.Any())
                 {
-                    return BadRequest("No matching transactions found.");
+                    return BadRequest("No  transactions found.");
                 }
                 var accountBalanceReportList = new List<GetAccountBalanceReportDto>();
                 decimal currentBalance = 0;
@@ -248,6 +238,7 @@ namespace WebApi.Controllers.Reciepts
         [HttpPost]
         public async Task<ActionResult<int>> CreateRecieptDetail(CreateRecieptDto command)
         {
+
             var loginIdClaim = _contextAccessor.HttpContext.User.FindFirstValue("id");
             int? loginId = null;
             if (!string.IsNullOrEmpty(loginIdClaim))
@@ -281,7 +272,7 @@ namespace WebApi.Controllers.Reciepts
                     return BadRequest("Invalid PayMode Id");
                 }
             }
-            var accountId = payMode.Name.ToLower() == "cash" ? 63 : payMode.Name.ToLower() == "bank" ? 65 : (int?)null;
+            var accountId = payMode.Name.ToLower() == "cash" ? 239 : payMode.Name.ToLower() == "bank" ? 237 : (int?)null;
             if (command.AccountId.HasValue)
             {
                 var account = await _entityGenericRepository.GetByIdAsync((int)command.AccountId);
@@ -314,238 +305,258 @@ namespace WebApi.Controllers.Reciepts
             {
                 return BadRequest("Voucher Type with name 'receipt' not found");
             }
-            try
+            using (var transaction = await _dbContext.Database.BeginTransactionAsync())
             {
-                var voucherNo = new VoucherSrNo
+                try
                 {
-                    SessionId = command.SessionId,
-                    ClfId = command.EntityId,
-                    SrNo = newsrNo,
-                    VoucherTypeId = voucherTypeSelect.Id,
-                };
-                var createdVoucherNo = await _voucherSrNoRepository.AddAsync(voucherNo);
-                var transFund = new TransFund
-                {
-                    EntityId = loginId,
-                    VoucherNo = createdVoucherNo.Id,
-                    VoucherType = voucherTypeSelect.Id,
-                    TotalAmount = command.Amount,
-                    EntryDate = command.EntryDate,
-                    Date = DateTime.Now,
-                    SessionId = command.SessionId,
-                    FranchiseId = command.EntityId,
-                    StaffId = loginId,
-                    PayMode = command.PayMode,
-                    LedgerHeadId = ledgerHead.Id,
-                    Status = true,
-                    PaymentConfirmDate = DateTime.Now,
-                    TaxableAmount = command.Amount,
-                };
-                var createdTransFund = await _transFundRepository.AddAsync(transFund);
-
-                var daybookCR = new Daybook
-                {
-                    FundReferenceId = createdTransFund.Id,
-                    AccountId = accountId,
-                    Amount = command.RecieveAmount,
-                    TransType = "CR",
-                    FranchiseId = loginId,
-                    StaffId = loginId,
-                    SessionId = command.SessionId,
-                    Status = true,
-                    DemoId = command.DemoId
-                };
-                var createdDayBookCR = await _dayBookGenericRepository.AddAsync(daybookCR);
-
-                var daybookDR = new Daybook
-                {
-                    FundReferenceId = createdTransFund.Id,
-                    AccountId = accountId,
-                    Amount = command.Amount,
-                    TransType = "DR",
-                    FranchiseId = command.EntityId,
-                    StaffId = loginId,
-                    SessionId = command.SessionId,
-                    Status = true,
-                    DemoId = command.DemoId,
-                    ParentId = createdDayBookCR.Id,
-                };
-                var createdDayBookDR = await _dayBookGenericRepository.AddAsync(daybookDR);
-                if (command.TDSAmount.HasValue)
-                {
-                    var entityTDSCharges = await _entityRepository.GetAll();
-                    var tdschargeselect = entityTDSCharges
-                           .Where(e => !string.IsNullOrEmpty(e.Name))
-                           .FirstOrDefault(m => m.Name.ToLower().Equals("tds charges"));
-                    var deduction = new Daybook
+                    var voucherNo = new VoucherSrNo
                     {
-                        AccountId = tdschargeselect.Id,
-                        Status = true,
-                        TransType = "CR",
                         SessionId = command.SessionId,
-                        Amount = command.TDSAmount,
-                        FranchiseId = loginId,
-                        FundReferenceId = createdTransFund.Id,
-                        ParentId = createdDayBookCR.Id,
+                        ClfId = command.EntityId,
+                        SrNo = newsrNo,
+                        VoucherTypeId = voucherTypeSelect.Id,
+                    };
+                    var createdVoucherNo = await _voucherSrNoRepository.AddAsync(voucherNo);
+                    var transFund = new TransFund
+                    {
+                        EntityId = loginId,
+                        VoucherNo = createdVoucherNo.Id,
+                        VoucherType = voucherTypeSelect.Id,
+                        TotalAmount = command.Amount,
+                        EntryDate = command.EntryDate,
+                        Date = DateTime.Now,
+                        SessionId = command.SessionId,
+                        FranchiseId = command.EntityId,
                         StaffId = loginId,
+                        PayMode = command.PayMode,
+                        LedgerHeadId = ledgerHead.Id,
+                        Status = true,
+                        PaymentConfirmDate = DateTime.Now,
+                        TaxableAmount = command.Amount,
                     };
-                    await _dayBookGenericRepository.AddAsync(deduction);
+                    var createdTransFund = await _transFundRepository.AddAsync(transFund);
 
-                    var tdsDaybook = new TransFundTd
+                    var daybookCR = new Daybook
                     {
                         FundReferenceId = createdTransFund.Id,
-                        TdsableAmount = command.Tds.TdsableAmount,
-                        Tdsper = command.Tds.Tdsper,
-                        PanNo = command.Tds.PanNo,
-                        Tds = command.Tds.Tds,
-                        
+                        AccountId = accountId,
+                        Amount = command.RecieveAmount,
+                        TransType = "CR",
+                        FranchiseId = loginId,
+                        StaffId = loginId,
+                        SessionId = command.SessionId,
+                        Status = true,
+                        DemoId = command.DemoId
                     };
-                    await _tdsGenericRepository.AddAsync(tdsDaybook);
-                }
-                if (command.Deductions != null && command.Deductions.Any())
-                {
-                    foreach (var deduction in command.Deductions)
+                    var createdDayBookCR = await _dayBookGenericRepository.AddAsync(daybookCR);
+
+                    var daybookDR = new Daybook
                     {
-                        var deductionDaybook = new Daybook
+                        FundReferenceId = createdTransFund.Id,
+                        AccountId = accountId,
+                        Amount = command.Amount,
+                        TransType = "DR",
+                        FranchiseId = command.EntityId,
+                        StaffId = loginId,
+                        SessionId = command.SessionId,
+                        Status = true,
+                        DemoId = command.DemoId,
+                        ParentId = createdDayBookCR.Id,
+                    };
+                    var createdDayBookDR = await _dayBookGenericRepository.AddAsync(daybookDR);
+                    if (command.TDSAmount.HasValue)
+                    {
+                        var entityTDSCharges = await _entityRepository.GetAll();
+                        var tdschargeselect = entityTDSCharges
+                               .Where(e => !string.IsNullOrEmpty(e.Name))
+                               .FirstOrDefault(m => m.Name.ToLower().Equals("tds charges"));
+                        var deduction = new Daybook
                         {
-                            AccountId = deduction.EntityId,
-                            Amount = deduction.DeductionAmount,
-                            TransType = "CR",
-                            FranchiseId = loginId,
-                            SessionId = command.SessionId,
+                            AccountId = tdschargeselect.Id,
                             Status = true,
+                            TransType = "CR",
+                            SessionId = command.SessionId,
+                            Amount = command.TDSAmount,
+                            FranchiseId = loginId,
                             FundReferenceId = createdTransFund.Id,
                             ParentId = createdDayBookCR.Id,
                             StaffId = loginId,
                         };
-                        await _dayBookGenericRepository.AddAsync(deductionDaybook);
-                    }
-                }
+                        await _dayBookGenericRepository.AddAsync(deduction);
 
-                if (command.PayType.ToLower() == "loan")
-                {
-                    var loanAccount = await _loanRepository1.GetByEntityIdAsync((int)command.EntityId);
-                    var data = loanAccount.FirstOrDefault(x => x.Id == command.LoanId);
-                    if (data == null)
-                    {
-                        return BadRequest("Loan not found with the given LoanId for this EntityId.");
-                    }
-                    var loanAccountDetails = data?.LoanAccountDetails.Where(d => d.Status == false).ToList();
-                    if (loanAccountDetails == null || !loanAccountDetails.Any())
-                    {
-                        return BadRequest("Loan not available on this Entity Id.");
-                    }
-
-                    var oneEmipayableAmount = loanAccountDetails.First().PayableAmount ?? 0;
-                    int multiples = (int)(command.Amount / oneEmipayableAmount);
-                    decimal remainingAmount = (decimal)command.Amount % oneEmipayableAmount;
-                    decimal totalPayableAmount = loanAccountDetails.Sum(x => x.PayableAmount ?? 0);
-                    if (command.Amount > totalPayableAmount)
-                    {
-                        return BadRequest($"The total amount to be paid exceeds the remaining payable amount of {totalPayableAmount:F2}.");
-                    }
-
-                    if (multiples == 0)
-                    {
-                        return BadRequest($"want minimum amount to pay {oneEmipayableAmount} ");
-                    }
-
-                    if (multiples > loanAccountDetails.Count)
-                    {
-                        return BadRequest("Not enough unpaid loan account details to cover the specified amount.");
-                    }
-
-                    for (int i = 0; i < multiples; i++)
-                    {
-                        var loanAccountDetail = loanAccountDetails[i];
-                        loanAccountDetail.FundReferenceId = transFund.Id;
-                        loanAccountDetail.EntityId = command.EntityId;
-                        loanAccountDetail.Status = true;
-                        await _loanAccountDetailRepository.UpdateAsync(loanAccountDetail.Id, loanAccountDetail);
-                    }
-                    var extraLoanAccountDetails = loanAccountDetails.Skip(multiples).ToList();
-                    var totalEmiMonth = extraLoanAccountDetails.Count();
-                    var remainingLoanAccountDetail = extraLoanAccountDetails.FirstOrDefault();
-                
-                    if (multiples == loanAccountDetails.Count)
-                    {
-                        data.Status = false; 
-                        await _loanAccountRepository.UpdateAsync(data.Id, data);
-                    }
-
-                    if (remainingAmount > 0)
-                    {
-                        decimal pendingAmount = 0;
-                        var emiMonth = 0;
-
-                        emiMonth = totalEmiMonth - 1;
-                        foreach (var extraLoanAccountDetail in extraLoanAccountDetails)
+                        var tdsDaybook = new TransFundTd
                         {
-                            pendingAmount += extraLoanAccountDetail.LoanAmount.Value;
-                        }
-                        pendingAmount -= remainingAmount;
-                        decimal monthlyInterestRate = (decimal)loanAccountDetails.First().InterestPercentage / 12 / 100;
+                            FundReferenceId = createdTransFund.Id,
+                            TdsableAmount = command.Tds.TdsableAmount,
+                            Tdsper = command.Tds.Tdsper,
+                            PanNo = command.Tds.PanNo,
+                            Tds = command.Tds.Tds,
 
+                        };
+                        await _tdsGenericRepository.AddAsync(tdsDaybook);
+                    }
+                    if (command.Deductions != null && command.Deductions.Any())
+                    {
+                        foreach (var deduction in command.Deductions)
+                        {
+                            var deductionDaybook = new Daybook
+                            {
+                                AccountId = deduction.EntityId,
+                                Amount = deduction.DeductionAmount,
+                                TransType = "CR",
+                                FranchiseId = loginId,
+                                SessionId = command.SessionId,
+                                Status = true,
+                                FundReferenceId = createdTransFund.Id,
+                                ParentId = createdDayBookCR.Id,
+                                StaffId = loginId,
+                            };
+                            await _dayBookGenericRepository.AddAsync(deductionDaybook);
+                        }
+                    }
+
+                    if (command.PayType.ToLower() == "loan")
+                    {
+                        var loanAccount = await _loanRepository1.GetByEntityIdAsync((int)command.EntityId);
+                        var data = loanAccount.FirstOrDefault(x => x.Id == command.LoanId);
+                        if (data == null)
+                        {
+                            return BadRequest("Loan not found with the given LoanId for this EntityId.");
+                        }
+                        var loanAccountDetails = data?.LoanAccountDetails.Where(d => d.Status == false).ToList();
+                        if (loanAccountDetails == null || !loanAccountDetails.Any())
+                        {
+                            return BadRequest("Loan not available on this Entity Id.");
+                        }
+
+                        var oneEmipayableAmount = loanAccountDetails.First().PayableAmount ?? 0;
+                        int multiples = (int)(command.Amount / oneEmipayableAmount);
+                        decimal remainingAmount = (decimal)command.Amount % oneEmipayableAmount;
+                        decimal totalPayableAmount = loanAccountDetails.Sum(x => x.PayableAmount ?? 0);
+                        if (command.Amount > totalPayableAmount)
+                        {
+                            return BadRequest($"The total amount to be paid exceeds the remaining payable amount of {totalPayableAmount:F2}.");
+                        }
+
+                        if (multiples == 0)
+                        {
+                            return BadRequest($"want minimum amount to pay {oneEmipayableAmount} ");
+                        }
+
+                        if (multiples > loanAccountDetails.Count)
+                        {
+                            return BadRequest("Not enough unpaid loan account details to cover the specified amount.");
+                        }
+
+                        for (int i = 0; i < multiples - 1; i++)
+                        {
+                            var loanAccountDetail = loanAccountDetails[i];
+                            loanAccountDetail.FundReferenceId = transFund.Id;
+                            loanAccountDetail.EntityId = command.EntityId;
+                            loanAccountDetail.Status = true;
+                            await _loanAccountDetailRepository.UpdateAsync(loanAccountDetail.Id, loanAccountDetail);
+                        }
+                        var remainingLoanAccountDetail = loanAccountDetails[multiples - 1];
                         remainingLoanAccountDetail.FundReferenceId = transFund.Id;
                         remainingLoanAccountDetail.EntityId = command.EntityId;
-                        remainingLoanAccountDetail.LoanAmount = remainingAmount;
-                        remainingLoanAccountDetail.PayableAmount = remainingAmount;
-                        remainingLoanAccountDetail.InterestAmount = null;
+
+                        if (remainingAmount > 0)
+                        {
+                            remainingLoanAccountDetail.LoanAmount = (remainingLoanAccountDetail.LoanAmount ?? 0) + remainingAmount;
+                            remainingLoanAccountDetail.PayableAmount = (remainingLoanAccountDetail.PayableAmount ?? 0) + remainingAmount;
+                        }
+
                         remainingLoanAccountDetail.Status = true;
                         await _loanAccountDetailRepository.UpdateAsync(remainingLoanAccountDetail.Id, remainingLoanAccountDetail);
-                        var amountcheckEqual = remainingAmount * monthlyInterestRate * 10;
-                        data.PayableAmount = data.PayableAmount - amountcheckEqual;
-                        await _loanAccountRepository.UpdateAsync(data.Id, data);
 
-                        foreach (var extraLoanAccountDetail in extraLoanAccountDetails.Skip(1))
+                        var extraLoanAccountDetails = loanAccountDetails.Skip(multiples).ToList();
+                        var totalEmiMonth = extraLoanAccountDetails.Count();
+
+                        if (multiples == loanAccountDetails.Count)
                         {
-                            await _loanAccountDetailRepository.RemoveAsync(extraLoanAccountDetail);
+                            data.Status = false;
+                            await _loanAccountRepository.UpdateAsync(data.Id, data);
                         }
 
-                        decimal OnePlusRPowerN(decimal baseValue, int exponent)
+                        if (remainingAmount > 0)
                         {
-                            decimal result = 1;
-                            for (int i = 0; i < exponent; i++)
+                            decimal pendingAmount = 0;
+                            var emiMonth = 0;
+
+                            emiMonth = totalEmiMonth;
+                            foreach (var extraLoanAccountDetail in extraLoanAccountDetails)
                             {
-                                result *= baseValue;
+                                pendingAmount += extraLoanAccountDetail.LoanAmount.Value;
+                                await _loanAccountDetailRepository.RemoveAsync(extraLoanAccountDetail);
                             }
-                            return result;
-                        }
+                            pendingAmount -= remainingAmount;
+                            decimal monthlyInterestRate = (decimal)loanAccountDetails.First().InterestPercentage / 12 / 100;
 
-                        var onePlusRPowerN = OnePlusRPowerN(1 + monthlyInterestRate, emiMonth);
-                        var emi = (pendingAmount * monthlyInterestRate * onePlusRPowerN) / (onePlusRPowerN - 1);
-                        var outstandingPrincipal = pendingAmount;
+                            var amountcheckEqual = remainingAmount * monthlyInterestRate * 10;
+                            data.PayableAmount = data.PayableAmount - amountcheckEqual;
+                            await _loanAccountRepository.UpdateAsync(data.Id, data);
 
-                        for (int i = 0; i < emiMonth; i++)
-                        {
-                            decimal interestPayment = outstandingPrincipal * monthlyInterestRate;
-                            decimal principalPayment = (decimal)emi - interestPayment;
-                            outstandingPrincipal -= principalPayment;
 
-                            var newLoanAccountDetail = new LoanAccountDetail
+
+                            decimal OnePlusRPowerN(decimal baseValue, int exponent)
                             {
-                                LoanAccountId = remainingLoanAccountDetail.LoanAccountId,
-                                EmiMonth = i + 1,
-                                LoanAmount = principalPayment,
-                                InterestAmount = interestPayment,
-                                PayableAmount = emi,
-                                InterestPercentage = (decimal)loanAccountDetails.First().InterestPercentage,
-                                StartDate = DateTime.Now,
-                                DueDate = DateTime.Now.AddMonths(1),
-                                Status = false,
-                                EntityId = null,
-                                FundReferenceId = null,
-                            };
-                            await _loanAccountDetailRepository.AddAsync(newLoanAccountDetail);
+                                decimal result = 1;
+                                for (int i = 0; i < exponent; i++)
+                                {
+                                    result *= baseValue;
+                                }
+                                return result;
+                            }
+
+                            var onePlusRPowerN = OnePlusRPowerN(1 + monthlyInterestRate, emiMonth);
+                            var emi = (pendingAmount * monthlyInterestRate * onePlusRPowerN) / (onePlusRPowerN - 1);
+                            var outstandingPrincipal = pendingAmount;
+
+                            for (int i = 0; i < emiMonth; i++)
+                            {
+                                decimal interestPayment = outstandingPrincipal * monthlyInterestRate;
+                                decimal principalPayment = (decimal)emi - interestPayment;
+                                outstandingPrincipal -= principalPayment;
+
+                                var newLoanAccountDetail = new LoanAccountDetail
+                                {
+                                    LoanAccountId = remainingLoanAccountDetail.LoanAccountId,
+                                    EmiMonth = i + 1,
+                                    LoanAmount = principalPayment,
+                                    InterestAmount = interestPayment,
+                                    PayableAmount = emi,
+                                    InterestPercentage = (decimal)loanAccountDetails.First().InterestPercentage,
+                                    StartDate = DateTime.Now,
+                                    DueDate = DateTime.Now.AddMonths(1),
+                                    Status = false,
+                                    EntityId = null,
+                                    FundReferenceId = null,
+                                };
+                                await _loanAccountDetailRepository.AddAsync(newLoanAccountDetail);
+                            }
+
+                            var loanAccountRepeat = await _loanRepository1.GetByEntityIdAsync((int)command.EntityId);
+                            var dataRepeat = loanAccountRepeat.FirstOrDefault(x => x.Id == command.LoanId);
+
+                            if (dataRepeat != null)
+                            {
+                                var updatedLoanAccountDetails = dataRepeat.LoanAccountDetails;
+                                dataRepeat.PayableAmount = updatedLoanAccountDetails.Sum(x => x.PayableAmount ?? 0);
+                                await _loanAccountRepository.UpdateAsync(dataRepeat.Id, dataRepeat);
+                            }
                         }
                     }
+
+                    await transaction.CommitAsync();
+                    return Ok(transFund.Id);
                 }
-                return Ok(transFund.Id);
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Error occurred: " + ex.Message);
+                }
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error creating entries: " + ex.Message);
-            }
+
         }
 
 

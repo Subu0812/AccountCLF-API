@@ -32,7 +32,7 @@ namespace AccountCLF.Data.Repository.LoanAccounts
             return await _context.LoanAccounts
                 .Include(x => x.LoanAccountDetails)
                 .Include(x => x.Loantenure)
-                .Where(detail => detail.EntityId == entityId && detail.Status == true)
+                .Where(detail => detail.EntityId == entityId )
                 .ToListAsync();
         }
 
