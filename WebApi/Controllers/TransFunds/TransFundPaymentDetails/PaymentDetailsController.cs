@@ -141,7 +141,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     Balance = ledgerHeadId.HasValue ? null : (balance >= 0
             ? balance.ToString("F2") + " CR"
             : (-balance).ToString("F2") + " DR"),
-                    Date = (DateTime)daybook.FundReference.Date
+                    Date = daybook.FundReference.Date != null ? (DateTime)daybook.FundReference.Date : null
                 });
             }
             return Ok(balanceDtos);
@@ -284,7 +284,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     AccountId = accountId,
                     Amount = command.Amount,
                     TransType = "DR",
-                    FranchiseId = loginId??0,
+                    FranchiseId = loginId??null,
                     SessionId = command.SessionId,
                     Status = true,
                     DemoId = command.DemoId,
@@ -341,7 +341,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     }
                     var Bankchargeselect = entityBankCharges
                        .Where(e => !string.IsNullOrEmpty(e.Name))
-                   .FirstOrDefault(m => m.Name.ToLower().Equals("bank charges", StringComparison.OrdinalIgnoreCase));
+                   .FirstOrDefault(m => m.Name.ToLower().Equals("Bank Charges", StringComparison.OrdinalIgnoreCase));
                     if (Bankchargeselect != null)
                     {
                         var charges = new Daybook
@@ -427,7 +427,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
             catch (Exception ex)
             {
 
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
 
@@ -470,13 +470,6 @@ namespace WebApi.Controllers.TransFundPaymentDetails
             return Ok(data.Id);
         }
 
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TransFundPaymentDetail>>> GetAllPaymentDetails()
-        {
-            var paymentDetails = await _genericRepository.GetAllAsync();
-            return Ok(paymentDetails);
-        }
 
 
         [HttpGet]
@@ -522,6 +515,28 @@ namespace WebApi.Controllers.TransFundPaymentDetails
             await _genericRepository.RemoveAsync(paymentDetail);
             return Ok("Payment Details Deleted Successfully!");
         }
+
+
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateAccountPaymentDetail(int id,UpdateAccountReportDataDto command)
+        {
+            var dayBooks = await _bookRepository.GetDaybookById(id);
+            if (dayBooks == null) 
+            {
+                return BadRequest("invalid DayBook Id");
+            }
+            dayBooks.Amount = command.Amount ?? dayBooks.Amount;
+            dayBooks.TransType = command.TransType ?? dayBooks.TransType;
+            dayBooks.AccountId = command.AccountId ?? dayBooks.AccountId;
+            dayBooks.FundReference.TotalAmount = command.Amount ?? dayBooks.FundReference.TotalAmount;
+            dayBooks.FundReference.Date = command.PayDate ?? dayBooks.FundReference.Date;
+            dayBooks.FundReference.EntryDate = command.PayDate ?? dayBooks.FundReference.EntryDate;
+            await _dayBookGenericRepository.UpdateAsync(id, dayBooks);
+            return Ok("Daybook Update Successfully!");
+
+        }
+
 
 
 

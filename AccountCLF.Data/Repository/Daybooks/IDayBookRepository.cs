@@ -12,5 +12,6 @@ namespace AccountCLF.Data.Repository.Daybooks
         Task<List<Daybook>> GetAll();
         Task<List<Daybook>> GetAccountBalance();
         Task<decimal> GetAccountBalanceByEntityIdAsync(int entityID);
+        Task<Daybook> GetDaybookById(int id);
     }
 }

@@ -38,6 +38,7 @@ namespace WebApi.Configurations
 
             CreateMap<Entity,GetEntityDto>();
             CreateMap<Entity,GetParentEntityDto>();
+            CreateMap<Entity,GetReferenceEntityDto>();
             CreateMap<BasicProfile,GetBasicProfileDto>();
             CreateMap<AccountGroup,GetAccountGroupDto>();
             CreateMap<LoanAccount,LoanAccountDto>();

@@ -22,6 +22,7 @@ namespace AccountCLF.Data.Repository.Entities
                 .Include(x => x.Reference)
                 .Include(x => x.BankDetails)
                 .ThenInclude(x => x.Bank)
+                .Where(x=>x.IsDelete==false)
                 .ToListAsync();
         }
 

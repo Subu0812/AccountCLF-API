@@ -29,6 +29,8 @@ public partial class Entity
 
     public int? ParentId { get; set; }
 
+    public bool? IsDelete { get; set; }
+
     public virtual AccountGroup? AccountType { get; set; }
 
     public virtual ICollection<AddressDetail> AddressDetails { get; set; } = new List<AddressDetail>();
@@ -78,6 +80,8 @@ public partial class Entity
     public virtual Entity? Staff { get; set; }
 
     public virtual ICollection<TransFund> TransFundEntities { get; set; } = new List<TransFund>();
+
+    public virtual ICollection<TransFund> TransFundFranchises { get; set; } = new List<TransFund>();
 
     public virtual ICollection<TransFundPaymentDetail> TransFundPaymentDetails { get; set; } = new List<TransFundPaymentDetail>();
 

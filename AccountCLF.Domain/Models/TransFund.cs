@@ -43,7 +43,7 @@ public partial class TransFund
 
     public virtual Entity? Entity { get; set; }
 
-    public virtual MasterTypeDetail? Franchise { get; set; }
+    public virtual Entity? Franchise { get; set; }
 
     public virtual MasterTypeDetail? LedgerHead { get; set; }
 

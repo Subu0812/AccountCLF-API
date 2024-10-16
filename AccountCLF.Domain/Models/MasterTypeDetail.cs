@@ -49,8 +49,6 @@ public partial class MasterTypeDetail
 
     public virtual ICollection<TransFundDetail> TransFundDetails { get; set; } = new List<TransFundDetail>();
 
-    public virtual ICollection<TransFund> TransFundFranchises { get; set; } = new List<TransFund>();
-
     public virtual ICollection<TransFund> TransFundLedgerHeads { get; set; } = new List<TransFund>();
 
     public virtual ICollection<TransFund> TransFundPayModeNavigations { get; set; } = new List<TransFund>();

@@ -56,5 +56,13 @@ namespace AccountCLF.Data.Repository.Daybooks
                 .ThenInclude(x => x.LedgerHead)
                 .ToListAsync();
         }
+
+        public async Task<Daybook> GetDaybookById(int id)
+        {
+            return await _dataContext.Daybooks
+                          .Include(x => x.FundReference)
+                          .ThenInclude(x => x.TransFundPaymentDetails)
+                          .FirstOrDefaultAsync(x=>x.Id==id);
+        }
     }
 }

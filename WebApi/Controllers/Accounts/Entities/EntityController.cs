@@ -248,6 +248,7 @@ public class EntityController : ControllerBase
                     IsActive = 1,
                     Date = entityDto.Date,
                     Name = entityDto.Name,
+                    IsDelete=false,
                 };
                 var createdEntity = await _entityGenericRepository.AddAsync(entity);
 
@@ -712,13 +713,27 @@ public class EntityController : ControllerBase
     public async Task<ActionResult<string>> Delete(int id)
     {
         var entityAccount = await _entityGenericRepository.GetByIdAsync(id);
+
         if (entityAccount == null)
         {
-            return BadRequest("invalid id");
+            return BadRequest("Invalid ID");
         }
-        await _entityGenericRepository.RemoveAsync(entityAccount);
-        return Ok("Ledger Account Delete Successfully!");
+        var referenceCheckData = await _entityGenericRepository.GetAllAsync();
+        var referenceCheck = referenceCheckData.FirstOrDefault(x=>x.ReferenceId==id);
+        if (referenceCheck != null)
+        {
+            entityAccount.IsDelete = true;
+
+            await _entityGenericRepository.UpdateAsync(id, entityAccount);
+            return Ok("This entity is referenced by other data but will still be deleted.");
+        }
+        entityAccount.IsDelete = true;
+
+        await _entityGenericRepository.UpdateAsync(id, entityAccount);
+
+        return Ok("Ledger Account marked as deleted successfully!");
     }
+
 
 
     [HttpPut]

@@ -35,6 +35,7 @@ namespace AccountCLF.Application.Contract.Entities
         public virtual GetParentEntityDto? Parent { get; set; }
 
         public List<GetBasicProfileDto> BasicProfiles { get; set; } = new List<GetBasicProfileDto>();
+        public virtual GetReferenceEntityDto? Reference { get; set; }
 
     }
     public class GetParentEntityDto
@@ -43,4 +44,11 @@ namespace AccountCLF.Application.Contract.Entities
 
         public string? Name { get; set; }
     }
+    public class GetReferenceEntityDto
+    {
+        public int Id { get; set; }
+
+        public string? Name { get; set; }
+    }
+    
 }
