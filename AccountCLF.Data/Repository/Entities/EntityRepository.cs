@@ -38,6 +38,12 @@ namespace AccountCLF.Data.Repository.Entities
         {
             return await _context.Entities
                 .Include(x=>x.BasicProfiles)
+                .Include(x=>x.BankDetails)
+                .Include(x=>x.MasterLogins)
+                .Include(x=>x.ProfileLinks)
+                .Include(x=>x.ContactProfiles)
+                .Include(x=>x.DocumentProfiles)
+                .Include(x=>x.Type)
                 .Include(x => x.Type)
                 .Where(x => x.Id == Id)
                 .FirstOrDefaultAsync();

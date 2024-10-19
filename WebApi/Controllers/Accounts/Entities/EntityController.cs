@@ -745,49 +745,58 @@ public class EntityController : ControllerBase
         {
             return BadRequest("invalid id Entity not found");
         }
-        if (command.ParentId.HasValue)
-        {
-            var accountType = await _entityGenericRepository.GetByIdAsync((int)command.ParentId);
-            if (accountType == null)
-            {
-                return BadRequest("Account Type id is invalid");
-            }
-        }
-        if (command.AccountTypeId.HasValue)
-        {
-            var accountType = await _accountGroupGenericRepository.GetByIdAsync((int)command.AccountTypeId);
-            if (accountType == null)
-            {
-                return BadRequest("Account Type id is invalid");
-            }
-        }
-        if (command.TypeId.HasValue)
-        {
-            var accountType = await _masterTypeDetailGenericRepository.GetByIdAsync((int)command.TypeId);
-            if (accountType == null)
-            {
-                return BadRequest("Account Type id is invalid");
-            }
-        }
-        entityAccount.ParentId = command.ParentId;
         entityAccount.Name = command.Name;
-        entityAccount.AccountTypeId = command.AccountTypeId;
         entityAccount.TypeId = command.TypeId;
+        entityAccount.Date = command.Date;
+
         await _entityGenericRepository.UpdateAsync(id, entityAccount);
-        if (entityAccount.BasicProfiles != null || entityAccount.BasicProfiles.Any())
+
+        if (command.ProfileLinks != null)
         {
-            var basicProfile = entityAccount.BasicProfiles.FirstOrDefault(x => x.EntityId == entityAccount.Id);
-            if (basicProfile != null)
+            var existingProfileLink = entityAccount.ProfileLinks.FirstOrDefault(x => x.EntityId == id);
+            if (existingProfileLink != null)
             {
-                basicProfile.Name = command.Name;
-                await _basicProfileGenericRepository.UpdateAsync(basicProfile.Id, basicProfile);
+                existingProfileLink.FatherName = command.ProfileLinks.FatherName;
+                existingProfileLink.MotherName = command.ProfileLinks.MotherName;
+                await _profileGenericRepository.UpdateAsync(existingProfileLink.Id, existingProfileLink);
             }
-            else
-            {
-                return BadRequest("BasicProfile not found for the Entity.");
-            }
-            await _basicProfileGenericRepository.UpdateAsync(basicProfile.Id, basicProfile);
         }
+        if (command.ContactProfiles != null)
+        {
+            var contactProfile = entityAccount.ContactProfiles.FirstOrDefault(x => x.EntityId == id);
+            if (contactProfile != null)
+            {
+                contactProfile.Email = command.ContactProfiles.Email;
+                contactProfile.MobileNo = command.ContactProfiles.MobileNo;
+                await _contactProfileGenericRepository.UpdateAsync(contactProfile.Id, contactProfile);
+            }
+        }
+        if (command.MasterLogins != null)
+        {
+            var masterLogin = entityAccount.MasterLogins.FirstOrDefault(x => x.EntityId == id);
+            if(masterLogin != null)
+            {
+                masterLogin.UserName = command.ContactProfiles.Email;
+                masterLogin.Password = command.MasterLogins.Password;
+                await _masterloginGenericRepository.UpdateAsync( masterLogin.Id, masterLogin);
+            }
+        }
+
+
+        //if (entityAccount.BasicProfiles != null || entityAccount.BasicProfiles.Any())
+        //{
+        //    var basicProfile = entityAccount.BasicProfiles.FirstOrDefault(x => x.EntityId == entityAccount.Id);
+        //    if (basicProfile != null)
+        //    {
+        //        basicProfile.Name = command.Name;
+        //        await _basicProfileGenericRepository.UpdateAsync(basicProfile.Id, basicProfile);
+        //    }
+        //    else
+        //    {
+        //        return BadRequest("BasicProfile not found for the Entity.");
+        //    }
+        //    await _basicProfileGenericRepository.UpdateAsync(basicProfile.Id, basicProfile);
+        //}
         return Ok(entityAccount.Id);
     }
 
