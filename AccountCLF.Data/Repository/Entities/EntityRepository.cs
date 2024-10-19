@@ -17,6 +17,9 @@ namespace AccountCLF.Data.Repository.Entities
             return await _context.Entities
                 .Include(x => x.BasicProfiles)
                 .Include(x => x.ContactProfiles)
+                .Include(x=>x.DocumentProfiles)
+                .Include(x=>x.MasterLogins)
+                .Include(x=>x.ProfileLinks)
                 .Include(x => x.Type)
                 .Include(x => x.AccountType)
                 .Include(x => x.Reference)

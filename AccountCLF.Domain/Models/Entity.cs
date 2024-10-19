@@ -39,7 +39,7 @@ public partial class Entity
 
     public virtual ICollection<BasicProfile> BasicProfiles { get; set; } = new List<BasicProfile>();
 
-    public virtual ICollection<ContactProfile> ContactProfiles { get; set; } = new List<ContactProfile>();
+        public virtual ICollection<ContactProfile> ContactProfiles { get; set; } = new List<ContactProfile>();
 
     public virtual ICollection<Daybook> DaybookAccounts { get; set; } = new List<Daybook>();
 
