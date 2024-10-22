@@ -48,7 +48,15 @@ namespace WebApi.Configurations
             CreateMap<BasicProfile,GetBasicProfileDto>();
             CreateMap<AccountGroup,GetAccountGroupDto>();
             CreateMap<LoanAccount,LoanAccountDto>();
-           
+            CreateMap<UpdateAddressDto, AddressDetail>()
+                       .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null)); 
+                        CreateMap<UpdateBankDetailDto,BankDetail>()
+                                       .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<UpdateDocumentDto,DocumentProfile>()
+                                       .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+
+
 
         }
     }

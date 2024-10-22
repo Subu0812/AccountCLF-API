@@ -6,8 +6,8 @@ namespace AccountCLF.Application.Contract.Entities
     {
         public int TypeId { get; set; }
         public DateTime? Date { get; set; }
-        //public int? AccountTypeId { get; set; }
         public int SessionId { get; set; }
+        public string? EmpCode { get; set; }
         public int? ReferenceId { get; set; }
         public int? StaffId { get; set; }
         public string? FatherName { get; set; }

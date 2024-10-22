@@ -14,13 +14,13 @@
         public GetContactProfileDto ContactProfiles { get; set; } 
         public GetMasterLoginDto MasterLogins { get; set; } 
         public GetProfileLinkDto ProfileLinks { get; set; }
+ 
     }
  
   
 
     public class UpdateDocumentDto
     {
-        public int Id { get; set; }
         public decimal? DocumentSrNo { get; set; }
         public int? DocType { get; set; }
         public string? DocumentNumber { get; set; }
@@ -28,7 +28,6 @@
     }
     public class UpdateAddressDto
     {
-        public int Id { get; set; }
         public int? AddressTypeId { get; set; }
         public int? CityId { get; set; }
         public string? PinCode { get; set; }
@@ -37,7 +36,7 @@
     }
     public class UpdateBankDetailDto
     
-        { public int Id { get; set; }
+        {
         public int? SrNo { get; set; }
         public string BeneficiaryName { get; set; } = null!;
         public string AccountNo { get; set; } = null!;

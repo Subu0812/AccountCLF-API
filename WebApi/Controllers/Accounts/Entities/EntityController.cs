@@ -13,9 +13,11 @@ using Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 
 namespace WebApi.Controllers.Accounts.Entities;
@@ -61,7 +63,8 @@ public class EntityController : ControllerBase
         IEntityRepository entityRepository, IEmailAppService emailAppService, IOtpRepository otpRepository, IConfiguration configuration,
         IGenericRepository<AddressDetail> addressDetailGenericRepository, IGenericRepository<BankDetail> bankDetailGenericRepository,
         IGenericRepository<Location> locationGenericRepository, IMasterTypeRepository masterTypeRepository,
-        IGenericRepository<DocumentProfile> documentProfileGenericRepository, IHttpContextAccessor contextAccessor, IHttpClientFactory httpClientFactory, AccountClfContext dbContext)
+        IGenericRepository<DocumentProfile> documentProfileGenericRepository, IHttpContextAccessor contextAccessor,
+        IHttpClientFactory httpClientFactory, AccountClfContext dbContext)
     {
         _entityGenericRepository = entityGenericRepository;
         _profileGenericRepository = profileGenericRepository;
@@ -103,6 +106,9 @@ public class EntityController : ControllerBase
             AccountTypeId = entityDto.AccountTypeId,
             SessionId = entityDto.SessionId,
             Date = DateTime.UtcNow,
+            IsActive=1,
+            Status=1,
+            IsDelete=false,
         };
         await _entityGenericRepository.AddAsync(entity);
         return Ok("Ledger Account Created Successfully!");
@@ -291,7 +297,7 @@ public class EntityController : ControllerBase
                 var basicProfile = new BasicProfile
                 {
                     EntityId = createdEntity.Id,
-                    Code = entityDto.Email,
+                    Code = entityDto.EmpCode,
                     Name = entityDto.Name,
                     DesignationId = createdDesignation.Id
                 };
@@ -735,71 +741,291 @@ public class EntityController : ControllerBase
     }
 
 
-
     [HttpPut]
     [Route("{id}")]
     public async Task<ActionResult<int>> UpdateLedgerAccount(int id, UpdateEntityDto command)
     {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync(); 
+        try
+        {
+            var entityAccount = await _entityRepository.GetById(id);
+            if (entityAccount == null)
+            {
+                return BadRequest("Invalid Entity ID. Entity not found.");
+            }
+
+            entityAccount.Name = command.Name;
+            entityAccount.TypeId = command.TypeId;
+            entityAccount.Date = command.Date;
+            await _entityGenericRepository.UpdateAsync(id, entityAccount);
+
+            if (command.ProfileLinks != null)
+            {
+                var existingProfileLink = entityAccount.ProfileLinks.FirstOrDefault(x => x.EntityId == entityAccount.Id);
+                if (existingProfileLink != null)
+                {
+                    existingProfileLink.FatherName = command.ProfileLinks.FatherName;
+                    existingProfileLink.MotherName = command.ProfileLinks.MotherName;
+                    await _profileGenericRepository.UpdateAsync(existingProfileLink.Id, existingProfileLink);
+                }
+            }
+            if (command.ContactProfiles != null)
+            {
+                var contactProfile = entityAccount.ContactProfiles.FirstOrDefault(x => x.EntityId == entityAccount.Id);
+                if (contactProfile != null)
+                {
+                    contactProfile.Email = command.ContactProfiles.Email;
+                    contactProfile.MobileNo = command.ContactProfiles.MobileNo;
+                    await _contactProfileGenericRepository.UpdateAsync(contactProfile.Id, contactProfile);
+                }
+            }
+            if (command.MasterLogins != null)
+            {
+                var masterLogin = entityAccount.MasterLogins.FirstOrDefault(x => x.EntityId == entityAccount.Id);
+                if (masterLogin != null)
+                {
+                    masterLogin.UserName = command.ContactProfiles.Email;
+                    masterLogin.Password = command.MasterLogins.Password;
+                    await _masterloginGenericRepository.UpdateAsync(masterLogin.Id, masterLogin);
+                }
+            }
+            await transaction.CommitAsync();
+            return Ok(entityAccount.Id);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, "An error occurred while updating the ledger account.");
+        }
+    }
+
+
+    [HttpPut]
+    [Route("addressdetail/{id}")]
+    public async Task<ActionResult<int>> UpdateAddress(int id, UpdateAddressDto command)
+    {
+        var address = await _addressDetailGenericRepository.GetByIdAsync(id);
+        if (address == null)
+        {
+            return BadRequest("Address not found.");
+        }
+
+        //address.AddressTypeId = command.AddressTypeId;
+        //address.CityId = command.CityId;
+        //address.PinCode = command.PinCode;
+        //address.Address = command.Address;
+        //address.LandMark = command.LandMark;
+         _mapper.Map(command, address);
+
+
+        await _addressDetailGenericRepository.UpdateAsync(id, address);
+        return Ok(address.Id);
+    }
+
+
+    [HttpPut]
+    [Route("bankdetail/{id}")]
+    public async Task<ActionResult<int>> UpdateBankDetail(int id, UpdateBankDetailDto command)
+    {
+        var bankDetail = await _bankDetailGenericRepository.GetByIdAsync(id);
+        if (bankDetail == null)
+        {
+            return BadRequest("Bank detail not found.");
+        }
+        //bankDetail.SrNo = command.SrNo;
+        //bankDetail.BeneficiaryName = command.BeneficiaryName;
+        //bankDetail.AccountNo = command.AccountNo;
+        //bankDetail.Ifsccode = command.Ifsccode;
+        //bankDetail.ParentId = command.ParentId;
+        //bankDetail.BankId = command.BankId;
+        var mappedData = _mapper.Map(command, bankDetail);
+
+        await _bankDetailGenericRepository.UpdateAsync(id, mappedData);
+        return Ok(bankDetail.Id);
+    }
+
+
+    //[HttpPut]
+    //[Route("UpdateDocument/{id}")]
+    //public async Task<ActionResult<int>> UpdateDocument(int id, UpdateDocumentDto documentMetadata, IFormFile? ImagePath)
+    //{
+    //    var entityAccount = await _entityRepository.GetById(id);
+    //    if (entityAccount == null)
+    //    {
+    //        return BadRequest("Invalid Entity ID.");
+    //    }
+
+    //    // Validate document metadata
+    //    if (documentMetadata == null)
+    //    {
+    //        return BadRequest("Document metadata is missing.");
+    //    }
+
+    //    // Process the document only if ImagePath is provided (not null)
+    //    if (ImagePath != null)
+    //    {
+    //        var masterTypeDetail = await _masterTypeRepository.Get();
+
+    //        // Validate DocType
+    //        if (documentMetadata.DocType.HasValue)
+    //        {
+    //            var docType = await _masterTypeDetailGenericRepository.GetByIdAsync((int)documentMetadata.DocType);
+    //            if (docType == null)
+    //                return BadRequest("Invalid Doc Type Id.");
+    //        }
+
+    //        // Check and validate the file extension
+    //        var fileExtension = Path.GetExtension(ImagePath.FileName).ToLower();
+    //        var allowedExtensionsList = masterTypeDetail
+    //            .Where(m => m.Type.Name.ToLower() == "documentextension")
+    //            .ToList();
+    //        var allowedExtensions = allowedExtensionsList.Select(x => x.Name).ToList();
+
+    //        if (!allowedExtensions.Contains(fileExtension))
+    //        {
+    //            return BadRequest($"Invalid file type '{fileExtension}'. Allowed types are: {string.Join(", ", allowedExtensions)}.");
+    //        }
+
+    //        // Save the file if the extension is valid
+    //        var matchedExtension = allowedExtensionsList.FirstOrDefault(x => x.Name.ToLower() == fileExtension);
+    //        if (matchedExtension != null)
+    //        {
+    //            var fileName = Guid.NewGuid().ToString() + fileExtension;
+    //            var filePath = Path.Combine("wwwroot/Documents", fileName);
+    //            using (var stream = new FileStream(filePath, FileMode.Create))
+    //            {
+    //                await ImagePath.CopyToAsync(stream);
+    //            }
+
+    //            var imageUrl = Path.Combine("Documents", fileName);
+
+    //            // Update the document profile if it exists, otherwise create a new one
+    //            var existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(documentMetadata.Id);
+    //            if (existingDocumentProfile != null)
+    //            {
+    //                existingDocumentProfile.DocType = documentMetadata.DocType;
+    //                existingDocumentProfile.Description = documentMetadata.Description;
+    //                existingDocumentProfile.Path = imageUrl; // Update with the new file path
+    //                existingDocumentProfile.DocExtensionId = matchedExtension.Id;
+    //                existingDocumentProfile.Name = documentMetadata.DocumentNumber;
+    //                existingDocumentProfile.IsActive = 1;
+    //                existingDocumentProfile.InsDate = DateTime.Now;
+
+    //                await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
+    //            }
+    //            else
+    //            {
+    //                var newDocumentProfile = new DocumentProfile
+    //                {
+    //                    EntityId = id,
+    //                    DocType = documentMetadata.DocType,
+    //                    Description = documentMetadata.Description,
+    //                    Path = imageUrl,
+    //                    DocExtensionId = matchedExtension.Id,
+    //                    Name = documentMetadata.DocumentNumber,
+    //                    IsActive = 1,
+    //                    InsDate = DateTime.Now
+    //                };
+
+    //                await _documentProfileGenericRepository.AddAsync(newDocumentProfile);
+    //            }
+    //        }
+    //        else
+    //        {
+    //            return BadRequest("The uploaded file type is not supported.");
+    //        }
+    //    }
+    //    else
+    //    {
+    //        // ImagePath is null, update only document metadata (no file update)
+    //        var existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(documentMetadata.Id);
+    //        if (existingDocumentProfile != null)
+    //        {
+    //            existingDocumentProfile.DocType = documentMetadata.DocType;
+    //            existingDocumentProfile.Description = documentMetadata.Description;
+    //            existingDocumentProfile.Name = documentMetadata.DocumentNumber;
+    //            existingDocumentProfile.IsActive = 1;
+    //            existingDocumentProfile.InsDate = DateTime.Now;
+
+    //            await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
+    //        }
+    //        else
+    //        {
+    //            return BadRequest("Document profile not found.");
+    //        }
+    //    }
+
+    //    return Ok(id);
+    //}
+
+    [HttpPut]
+    [Route("UpdateDocument/{id}")]
+    public async Task<ActionResult<int>> UpdateDocument(int id, UpdateDocumentDto documentMetadata, IFormFile? ImagePath)
+    {
         var entityAccount = await _entityRepository.GetById(id);
         if (entityAccount == null)
         {
-            return BadRequest("invalid id Entity not found");
+            return BadRequest("Invalid Entity ID.");
         }
-        entityAccount.Name = command.Name;
-        entityAccount.TypeId = command.TypeId;
-        entityAccount.Date = command.Date;
-
-        await _entityGenericRepository.UpdateAsync(id, entityAccount);
-
-        if (command.ProfileLinks != null)
+        if (documentMetadata == null)
         {
-            var existingProfileLink = entityAccount.ProfileLinks.FirstOrDefault(x => x.EntityId == id);
-            if (existingProfileLink != null)
+            return BadRequest("Document metadata is missing.");
+        }
+        var existingDocumentProfile = new DocumentProfile();
+        if (ImagePath != null)
+        {
+            var masterTypeDetail = await _masterTypeRepository.Get();
+            if (documentMetadata.DocType.HasValue)
             {
-                existingProfileLink.FatherName = command.ProfileLinks.FatherName;
-                existingProfileLink.MotherName = command.ProfileLinks.MotherName;
-                await _profileGenericRepository.UpdateAsync(existingProfileLink.Id, existingProfileLink);
+                var docType = await _masterTypeDetailGenericRepository.GetByIdAsync((int)documentMetadata.DocType);
+                if (docType == null)
+                    return BadRequest("Invalid Doc Type Id.");
+            }
+            var fileExtension = Path.GetExtension(ImagePath.FileName).ToLower();
+            var allowedExtensionsList = masterTypeDetail
+                .Where(m => m.Type.Name.ToLower() == "documentextension")
+                .ToList();
+            var allowedExtensions = allowedExtensionsList.Select(x => x.Name).ToList();
+
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest($"Invalid file type '{fileExtension}'. Allowed types are: {string.Join(", ", allowedExtensions)}.");
+            }
+            var matchedExtension = allowedExtensionsList.FirstOrDefault(x => x.Name.ToLower() == fileExtension);
+            if (matchedExtension != null)
+            {
+                var fileName = Guid.NewGuid().ToString() + fileExtension;
+                var filePath = Path.Combine("wwwroot/Documents", fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await ImagePath.CopyToAsync(stream);
+                }
+                var imageUrl = Path.Combine("Documents", fileName);
+                 existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
+                if (existingDocumentProfile != null)
+                {
+                    existingDocumentProfile.Path = imageUrl;
+                    existingDocumentProfile.DocExtensionId = matchedExtension.Id;
+                }
             }
         }
-        if (command.ContactProfiles != null)
+        var documentProfileToUpdate = await _documentProfileGenericRepository.GetByIdAsync(id);
+        if (documentProfileToUpdate != null)
         {
-            var contactProfile = entityAccount.ContactProfiles.FirstOrDefault(x => x.EntityId == id);
-            if (contactProfile != null)
-            {
-                contactProfile.Email = command.ContactProfiles.Email;
-                contactProfile.MobileNo = command.ContactProfiles.MobileNo;
-                await _contactProfileGenericRepository.UpdateAsync(contactProfile.Id, contactProfile);
-            }
+            //documentProfileToUpdate.DocType = documentMetadata.DocType;
+            //documentProfileToUpdate.Description = documentMetadata.Description;
+            //documentProfileToUpdate.Name = documentMetadata.DocumentNumber;
+            //documentProfileToUpdate.IsActive = 1;
+            //documentProfileToUpdate.InsDate = DateTime.Now;
+            var mappedData = _mapper.Map(documentMetadata, existingDocumentProfile);
+            await _documentProfileGenericRepository.UpdateAsync(documentProfileToUpdate.Id, documentProfileToUpdate);
         }
-        if (command.MasterLogins != null)
+        else
         {
-            var masterLogin = entityAccount.MasterLogins.FirstOrDefault(x => x.EntityId == id);
-            if(masterLogin != null)
-            {
-                masterLogin.UserName = command.ContactProfiles.Email;
-                masterLogin.Password = command.MasterLogins.Password;
-                await _masterloginGenericRepository.UpdateAsync( masterLogin.Id, masterLogin);
-            }
+            return BadRequest("Document profile not found.");
         }
-
-
-        //if (entityAccount.BasicProfiles != null || entityAccount.BasicProfiles.Any())
-        //{
-        //    var basicProfile = entityAccount.BasicProfiles.FirstOrDefault(x => x.EntityId == entityAccount.Id);
-        //    if (basicProfile != null)
-        //    {
-        //        basicProfile.Name = command.Name;
-        //        await _basicProfileGenericRepository.UpdateAsync(basicProfile.Id, basicProfile);
-        //    }
-        //    else
-        //    {
-        //        return BadRequest("BasicProfile not found for the Entity.");
-        //    }
-        //    await _basicProfileGenericRepository.UpdateAsync(basicProfile.Id, basicProfile);
-        //}
-        return Ok(entityAccount.Id);
+        return Ok(id);
     }
-
 
 
     [HttpPut]

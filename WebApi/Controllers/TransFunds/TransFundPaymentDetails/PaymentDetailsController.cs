@@ -7,7 +7,9 @@ using AccountCLF.Data.Repository.Daybooks;
 using AccountCLF.Data.Repository.Entities;
 using AccountCLF.Data.Repository.LoanAccounts;
 using AutoMapper;
+using Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Model;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -40,6 +42,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
         private readonly IDayBookRepository _bookRepository;
         private readonly IMapper _mapper;
         private readonly IEntityRepository _entityRepository;
+        private readonly AccountClfContext _dbContext;
 
         public PaymentDetailsController(
             IMapper mapper,
@@ -62,7 +65,8 @@ namespace WebApi.Controllers.TransFundPaymentDetails
             IGenericRepository<TransFundBillingDetail> billDetailRepository,
             IGenericRepository<TransFundRemark> remarkGenericRepository,
             IEntityRepository entityRepository,
-            IGenericRepository<TransFundTd> tdsGenericRepository)
+            IGenericRepository<TransFundTd> tdsGenericRepository,
+            AccountClfContext dbContext)
         {
             _mapper = mapper;
             _genericRepository = genericRepository;
@@ -85,6 +89,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
             _remarkGenericRepository = remarkGenericRepository;
             _entityRepository = entityRepository;
             _tdsGenericRepository = tdsGenericRepository;
+            _dbContext = dbContext;
         }
 
 
@@ -151,6 +156,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
         [HttpPost]
         public async Task<ActionResult<int>> CreatePaymentDetail(CreatePaymentDetailsDto command)
         {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
             try
             {
                 if (command.EntityId.HasValue)
@@ -341,7 +347,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     }
                     var Bankchargeselect = entityBankCharges
                        .Where(e => !string.IsNullOrEmpty(e.Name))
-                   .FirstOrDefault(m => m.Name.ToLower().Equals("Bank Charges", StringComparison.OrdinalIgnoreCase));
+                   .FirstOrDefault(m => m.Name.ToLower().Equals("Bank Charges".ToLower(), StringComparison.OrdinalIgnoreCase));
                     if (Bankchargeselect != null)
                     {
                         var charges = new Daybook
@@ -422,12 +428,13 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                 paymentDetails.DaybookId=createdDayBookDR.Id;
                 await _genericRepository.AddAsync(paymentDetails);
 
-                return transFund.Id;
+                await transaction.CommitAsync();
+                return Ok(createdTransFund.Id);
             }
             catch (Exception ex)
             {
-
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+                await transaction.RollbackAsync();
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal Server Error: {ex.Message}");
             }
         }
 
