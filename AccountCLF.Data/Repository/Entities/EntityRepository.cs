@@ -37,15 +37,17 @@ namespace AccountCLF.Data.Repository.Entities
         public async Task<Entity> GetById(int Id)
         {
             return await _context.Entities
-                .Include(x=>x.BasicProfiles)
-                .Include(x=>x.BankDetails)
-                .Include(x=>x.MasterLogins)
-                .Include(x=>x.ProfileLinks)
-                .Include(x=>x.ContactProfiles)
-                .Include(x=>x.DocumentProfiles)
-                .Include(x=>x.Type)
+                 .Include(x => x.BasicProfiles)
+                .Include(x => x.ContactProfiles)
+                .Include(x => x.DocumentProfiles)
+                .Include(x => x.MasterLogins)
+                .Include(x => x.ProfileLinks)
                 .Include(x => x.Type)
-                .Where(x => x.Id == Id)
+                .Include(x => x.AccountType)
+                .Include(x => x.Reference)
+                .Include(x => x.BankDetails)
+                .ThenInclude(x => x.Bank)
+                .Where(x => x.Id == Id && x.IsDelete==false )
                 .FirstOrDefaultAsync();
         }
 

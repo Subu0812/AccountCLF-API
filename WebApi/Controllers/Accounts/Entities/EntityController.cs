@@ -626,6 +626,20 @@ public class EntityController : ControllerBase
 
 
     [HttpGet]
+    [Route("{id}")]
+    public async Task<ActionResult<GetEntityDto>> GetById(int id)
+    {
+        var entity = await _entityRepository.GetById(id);
+        if (entity == null)
+        {
+            return NotFound("Data Not Found");
+        }
+        var mappedData = _mapper.Map<GetEntityDto>(entity);
+        return Ok(mappedData);
+    }
+
+
+    [HttpGet]
     [Route("filter/clf-po-shg/dropdown")]
     public async Task<ActionResult<List<GetEntityDto>>> GetCLFPOSHGDropdown()
     {
@@ -816,8 +830,6 @@ public class EntityController : ControllerBase
         //address.Address = command.Address;
         //address.LandMark = command.LandMark;
          _mapper.Map(command, address);
-
-
         await _addressDetailGenericRepository.UpdateAsync(id, address);
         return Ok(address.Id);
     }
