@@ -11,6 +11,8 @@ namespace AccountCLF.Application.Contract.Entities
         public int SessionId { get; set; }
         public int? ReferenceId { get; set; }
         public int? StaffId { get; set; }
+        public string? Code { get; set; }
+
         public string Name { get; set; }
    
         public GetContactProfileDto ContactProfiles { get; set; } 

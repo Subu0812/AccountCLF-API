@@ -782,6 +782,11 @@ public class EntityController : ControllerBase
             entityAccount.Date = command.Date;
             await _entityGenericRepository.UpdateAsync(id, entityAccount);
 
+            var existingBasicProfile = entityAccount.BasicProfiles.FirstOrDefault(x => x.EntityId == entityAccount.Id);
+            existingBasicProfile.Name=command.Name;
+            existingBasicProfile.Code = command.Code;
+            await _basicProfileGenericRepository.UpdateAsync(existingBasicProfile.Id, existingBasicProfile);
+
             if (command.ProfileLinks != null)
             {
                 var existingProfileLink = entityAccount.ProfileLinks.FirstOrDefault(x => x.EntityId == entityAccount.Id);
