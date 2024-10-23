@@ -340,9 +340,10 @@ public class EntityController : ControllerBase
                                 await imageFile.CopyToAsync(stream);
                             }
 
-                            var imageUrl = Path.Combine("PanCard", fileName);
+                            var imageUrl = Path.Combine("PanCard/", fileName);
                             var documentProfile = new DocumentProfile
                             {
+                                SrNo=documentMetadata.DocumentSrNo,
                                 EntityId = createdEntity.Id,
                                 DocType = documentMetadata.DocType,
                                 IsActive = 1,
