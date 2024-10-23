@@ -971,20 +971,17 @@ public class EntityController : ControllerBase
     //}
 
     [HttpPut]
-    [Route("UpdateDocument/{id}")]
-    public async Task<ActionResult<int>> UpdateDocument(int id, UpdateDocumentDto documentMetadata, IFormFile? ImagePath)
+    [Route("documentprofile/{id}")]
+    public async Task<ActionResult<int>> UpdateDocument(int id,[FromForm] UpdateDocumentDto documentMetadata)
     {
-        var entityAccount = await _entityRepository.GetById(id);
+        var entityAccount = await _documentProfileGenericRepository.GetByIdAsync(id);
         if (entityAccount == null)
         {
-            return BadRequest("Invalid Entity ID.");
+            return BadRequest("Invalid document ID.");
         }
-        if (documentMetadata == null)
-        {
-            return BadRequest("Document metadata is missing.");
-        }
+       
         var existingDocumentProfile = new DocumentProfile();
-        if (ImagePath != null)
+        if (documentMetadata.ImagePath != null)
         {
             var masterTypeDetail = await _masterTypeRepository.Get();
             if (documentMetadata.DocType.HasValue)
@@ -993,7 +990,7 @@ public class EntityController : ControllerBase
                 if (docType == null)
                     return BadRequest("Invalid Doc Type Id.");
             }
-            var fileExtension = Path.GetExtension(ImagePath.FileName).ToLower();
+            var fileExtension = Path.GetExtension(documentMetadata.ImagePath.FileName).ToLower();
             var allowedExtensionsList = masterTypeDetail
                 .Where(m => m.Type.Name.ToLower() == "documentextension")
                 .ToList();
@@ -1007,10 +1004,10 @@ public class EntityController : ControllerBase
             if (matchedExtension != null)
             {
                 var fileName = Guid.NewGuid().ToString() + fileExtension;
-                var filePath = Path.Combine("wwwroot/Documents", fileName);
+                var filePath = Path.Combine("wwwroot/PanCard", fileName);
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    await ImagePath.CopyToAsync(stream);
+                    await documentMetadata.ImagePath.CopyToAsync(stream);
                 }
                 var imageUrl = Path.Combine("Documents", fileName);
                  existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
@@ -1021,8 +1018,8 @@ public class EntityController : ControllerBase
                 }
             }
         }
-        var documentProfileToUpdate = await _documentProfileGenericRepository.GetByIdAsync(id);
-        if (documentProfileToUpdate != null)
+         existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
+        if (existingDocumentProfile != null)
         {
             //documentProfileToUpdate.DocType = documentMetadata.DocType;
             //documentProfileToUpdate.Description = documentMetadata.Description;
@@ -1030,7 +1027,7 @@ public class EntityController : ControllerBase
             //documentProfileToUpdate.IsActive = 1;
             //documentProfileToUpdate.InsDate = DateTime.Now;
             var mappedData = _mapper.Map(documentMetadata, existingDocumentProfile);
-            await _documentProfileGenericRepository.UpdateAsync(documentProfileToUpdate.Id, documentProfileToUpdate);
+            await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
         }
         else
         {

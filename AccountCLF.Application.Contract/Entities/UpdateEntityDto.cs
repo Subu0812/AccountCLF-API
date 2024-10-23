@@ -1,4 +1,6 @@
-﻿namespace AccountCLF.Application.Contract.Entities
+﻿using Microsoft.AspNetCore.Http;
+
+namespace AccountCLF.Application.Contract.Entities
 {
     public class UpdateEntityDto
     {
@@ -17,14 +19,13 @@
  
     }
  
-  
-
     public class UpdateDocumentDto
     {
         public decimal? DocumentSrNo { get; set; }
         public int? DocType { get; set; }
         public string? DocumentNumber { get; set; }
         public string? Description { get; set; }
+        public IFormFile? ImagePath { get; set; }
     }
     public class UpdateAddressDto
     {
