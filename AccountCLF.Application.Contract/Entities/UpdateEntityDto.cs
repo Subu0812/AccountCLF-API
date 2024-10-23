@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AccountCLF.Application.Contract.Entities.Logins;
+using Microsoft.AspNetCore.Http;
 
 namespace AccountCLF.Application.Contract.Entities
 {
@@ -11,13 +12,12 @@ namespace AccountCLF.Application.Contract.Entities
         public int SessionId { get; set; }
         public int? ReferenceId { get; set; }
         public int? StaffId { get; set; }
-        public string? Code { get; set; }
-
         public string Name { get; set; }
    
         public GetContactProfileDto ContactProfiles { get; set; } 
         public GetMasterLoginDto MasterLogins { get; set; } 
         public GetProfileLinkDto ProfileLinks { get; set; }
+        public GetBasicProfileDto BasicProfiles { get; set; }
  
     }
  
