@@ -13,11 +13,9 @@ using Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 
 namespace WebApi.Controllers.Accounts.Entities;
@@ -106,9 +104,9 @@ public class EntityController : ControllerBase
             AccountTypeId = entityDto.AccountTypeId,
             SessionId = entityDto.SessionId,
             Date = DateTime.UtcNow,
-            IsActive=1,
-            Status=1,
-            IsDelete=false,
+            IsActive = 1,
+            Status = 1,
+            IsDelete = false,
         };
         await _entityGenericRepository.AddAsync(entity);
         return Ok("Ledger Account Created Successfully!");
@@ -186,7 +184,7 @@ public class EntityController : ControllerBase
                     var address = JsonConvert.DeserializeObject<CreateAddressDto>(addressJson);
                     if (address != null)
                     {
-                        addressList.Add(address);   
+                        addressList.Add(address);
                     }
                 }
                 var bankDetailList = new List<CreateBankDetailDto>();
@@ -254,7 +252,7 @@ public class EntityController : ControllerBase
                     IsActive = 1,
                     Date = entityDto.Date,
                     Name = entityDto.Name,
-                    IsDelete=false,
+                    IsDelete = false,
                 };
                 var createdEntity = await _entityGenericRepository.AddAsync(entity);
 
@@ -570,13 +568,13 @@ public class EntityController : ControllerBase
         {
             return NotFound("Data Not Found");
         }
-        var result= entities.Where(entity => entity.BankDetails.Any(x => x.EntityId == loginId))
+        var result = entities.Where(entity => entity.BankDetails.Any(x => x.EntityId == loginId))
          .Select(entity => new GetEntityBankandAccountNumberDto
          {
              EntityId = entity.Id,
              Details = entity.BankDetails
                         .Where(b => b.EntityId == loginId)
-                                               .Select(b => $"{b.Bank.Code} - {b.AccountNo}") 
+                                               .Select(b => $"{b.Bank.Code} - {b.AccountNo}")
                         .FirstOrDefault()
          })
          .ToList();
@@ -620,6 +618,7 @@ public class EntityController : ControllerBase
         {
             return NotFound("Data Not Found");
         }
+
         var mappedData = _mapper.Map<List<GetEntityDto>>(entity);
         return Ok(mappedData);
     }
@@ -635,6 +634,15 @@ public class EntityController : ControllerBase
             return NotFound("Data Not Found");
         }
         var mappedData = _mapper.Map<GetEntityDto>(entity);
+        foreach (var address in mappedData.AddressDetails)
+        {
+            var city = entity.AddressDetails.FirstOrDefault()?.City;
+            if (city != null)
+            {
+                address.ParentId = city.Parent?.Id;
+                address.GrandParentId = city.Parent?.Parent?.Id;
+            }
+        }
         return Ok(mappedData);
     }
 
@@ -739,7 +747,7 @@ public class EntityController : ControllerBase
             return BadRequest("Invalid ID");
         }
         var referenceCheckData = await _entityGenericRepository.GetAllAsync();
-        var referenceCheck = referenceCheckData.FirstOrDefault(x=>x.ReferenceId==id);
+        var referenceCheck = referenceCheckData.FirstOrDefault(x => x.ReferenceId == id);
         if (referenceCheck != null)
         {
             entityAccount.IsDelete = true;
@@ -759,7 +767,7 @@ public class EntityController : ControllerBase
     [Route("{id}")]
     public async Task<ActionResult<int>> UpdateLedgerAccount(int id, UpdateEntityDto command)
     {
-        using var transaction = await _dbContext.Database.BeginTransactionAsync(); 
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
         {
             var entityAccount = await _entityRepository.GetById(id);
@@ -829,7 +837,8 @@ public class EntityController : ControllerBase
         //address.PinCode = command.PinCode;
         //address.Address = command.Address;
         //address.LandMark = command.LandMark;
-         _mapper.Map(command, address);
+
+        _mapper.Map(command, address);
         await _addressDetailGenericRepository.UpdateAsync(id, address);
         return Ok(address.Id);
     }
@@ -972,14 +981,14 @@ public class EntityController : ControllerBase
 
     [HttpPut]
     [Route("documentprofile/{id}")]
-    public async Task<ActionResult<int>> UpdateDocument(int id,[FromForm] UpdateDocumentDto documentMetadata)
+    public async Task<ActionResult<int>> UpdateDocument(int id, [FromForm] UpdateDocumentDto documentMetadata)
     {
         var entityAccount = await _documentProfileGenericRepository.GetByIdAsync(id);
         if (entityAccount == null)
         {
             return BadRequest("Invalid document ID.");
         }
-       
+
         var existingDocumentProfile = new DocumentProfile();
         if (documentMetadata.ImagePath != null)
         {
@@ -1009,8 +1018,8 @@ public class EntityController : ControllerBase
                 {
                     await documentMetadata.ImagePath.CopyToAsync(stream);
                 }
-                var imageUrl = Path.Combine("Documents", fileName);
-                 existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
+                var imageUrl = Path.Combine("PanCard", fileName);
+                existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
                 if (existingDocumentProfile != null)
                 {
                     existingDocumentProfile.Path = imageUrl;
@@ -1018,7 +1027,7 @@ public class EntityController : ControllerBase
                 }
             }
         }
-         existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
+        existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
         if (existingDocumentProfile != null)
         {
             //documentProfileToUpdate.DocType = documentMetadata.DocType;

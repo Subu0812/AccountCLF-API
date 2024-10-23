@@ -80,6 +80,8 @@ namespace AccountCLF.Application.Contract.Entities
         public string? PinCode { get; set; }
         public string? Address { get; set; }
         public string? LandMark { get; set; }
+        public int? ParentId { get; set; }
+        public int? GrandParentId { get; set; }
     }
     public class GetBankDetailDto
     {
