@@ -787,7 +787,7 @@ public class EntityController : ControllerBase
                 if (existingBasicProfile != null)
                 {
                     existingBasicProfile.Name = command.Name;
-                    existingBasicProfile.Code = command.Code;
+                    existingBasicProfile.Code = command.BasicProfiles.Code;
                     await _basicProfileGenericRepository.UpdateAsync(existingBasicProfile.Id, existingBasicProfile);
                 }
             }
