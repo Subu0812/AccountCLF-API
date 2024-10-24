@@ -23,6 +23,8 @@ public partial class BankDetail
 
     public bool IsActive { get; set; }
 
+    public bool? IsDelete { get; set; }
+
     public virtual MasterTypeDetail Bank { get; set; } = null!;
 
     public virtual Entity Entity { get; set; } = null!;

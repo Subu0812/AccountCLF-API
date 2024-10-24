@@ -27,6 +27,8 @@ public partial class DocumentProfile
 
     public string? Name { get; set; }
 
+    public bool? IsDelete { get; set; }
+
     public virtual MasterTypeDetail? DocExtension { get; set; }
 
     public virtual MasterTypeDetail? DocTypeNavigation { get; set; }

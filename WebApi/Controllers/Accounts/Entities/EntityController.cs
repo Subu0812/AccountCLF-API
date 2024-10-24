@@ -351,8 +351,8 @@ public class EntityController : ControllerBase
                                 Description = documentMetadata.Description,
                                 DocExtensionId = matchedExtension.Id,
                                 Path = imageUrl,
-                                Name = documentMetadata.DocumentNumber
-                            };
+                                Name = documentMetadata.DocumentNumber,
+                                                            };
                             await _documentProfileGenericRepository.AddAsync(documentProfile);
                         }
                         else
@@ -374,6 +374,7 @@ public class EntityController : ControllerBase
                             Ifsccode = bankDetail.Ifsccode,
                             BankId = bankDetail.BankId,
                             EntityId = createdEntity.Id,
+                            IsActive=true,
                         };
                         await _bankDetailGenericRepository.AddAsync(newBankDetail);
                     }
@@ -1138,6 +1139,51 @@ public class EntityController : ControllerBase
         }
         await _entityGenericRepository.RemoveAsync(ledgerAccount);
         return Ok("Ledger Account Delete Successfully!");
+    }
+
+
+    [HttpDelete]
+    [Route("addressdetail/{id}")]
+    public async Task<ActionResult<string>> DeleteAddresDetail(int id)
+    {
+        var addressDetail = await _addressDetailGenericRepository.GetByIdAsync(id);
+        if (addressDetail == null)
+        {
+            return BadRequest("invalid id");
+        }
+        addressDetail.IsDelete = true;
+      await  _addressDetailGenericRepository.UpdateAsync(id, addressDetail);
+        return Ok("Address Detail Delete Successfully!");
+    } 
+
+
+    [HttpDelete]
+    [Route("bankdetail/{id}")]
+    public async Task<ActionResult<string>> DeleteBankDetail(int id)
+    {
+        var bankDetail = await _bankDetailGenericRepository.GetByIdAsync(id);
+        if (bankDetail == null)
+        {
+            return BadRequest("invalid id");
+        }
+        bankDetail.IsDelete = true;
+      await  _bankDetailGenericRepository.UpdateAsync(id, bankDetail);
+        return Ok("Bank Detail Delete Successfully!");
+    }
+
+
+    [HttpDelete]
+    [Route("documentprofile/{id}")]
+    public async Task<ActionResult<string>> DeleteDocumentProfile(int id)
+    {
+        var documentProfile = await _documentProfileGenericRepository.GetByIdAsync(id);
+        if (documentProfile == null)
+        {
+            return BadRequest("invalid id");
+        }
+        documentProfile.IsDelete = true;
+      await  _documentProfileGenericRepository.UpdateAsync(id, documentProfile);
+        return Ok("Document Profile Delete Successfully!");
     }
 
 

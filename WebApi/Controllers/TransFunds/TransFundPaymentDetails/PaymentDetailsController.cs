@@ -375,7 +375,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     var entityTDSCharges = await _entityRepository.GetAll();
                     var tdschargeselect = entityTDSCharges
                            .Where(e => !string.IsNullOrEmpty(e.Name))
-                           .FirstOrDefault(m => m.Name.ToLower().Equals("tds charges"));
+                           .FirstOrDefault(m => m.Name.ToLower().Equals("tds charge"));
                     var deduction = new Daybook
                     {
                         AccountId = tdschargeselect.Id,

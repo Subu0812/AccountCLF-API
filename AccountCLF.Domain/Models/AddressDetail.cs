@@ -19,6 +19,8 @@ public partial class AddressDetail
 
     public string? LandMark { get; set; }
 
+    public bool? IsDelete { get; set; }
+
     public virtual MasterTypeDetail? AddressType { get; set; }
 
     public virtual Location? City { get; set; }
