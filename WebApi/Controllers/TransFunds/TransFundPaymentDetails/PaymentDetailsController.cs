@@ -194,18 +194,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                         return BadRequest("Invalid PayMode");
                     }
                 }
-
-                var accountId = payMode.Name.ToLower() == "cash" ? 239 : payMode.Name.ToLower() == "bank" ? 237 : (int?)null;
-                var account = new Entity();
-                if (command.AccountId.HasValue)
-                {
-                    account = await _entityGenericRepository.GetByIdAsync(command.AccountId.Value);
-                    if (account == null)
-                    {
-                        return BadRequest("Invalid AccountId");
-                    }
-                }
-
+              
                 var masterTypedetails = new MasterTypeDetail();
                 if (command.BankId.HasValue)
                 {
@@ -227,6 +216,22 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                     return BadRequest("Please login first");
                 }
 
+                var accountId = payMode.Name.ToLower() == "cash" ? 239 : payMode.Name.ToLower() == "bank" ? 237 : (int?)null;
+
+                if (command.BankChargeAmount.HasValue && payMode.Name.Equals("bank", StringComparison.OrdinalIgnoreCase))
+                {
+                    accountId = command.EntityBankAccountTypeId.Value;
+                }
+
+                    var account = new Entity();
+                if (command.AccountId.HasValue)
+                {
+                    account = await _entityGenericRepository.GetByIdAsync(command.AccountId.Value);
+                    if (account == null)
+                    {
+                        return BadRequest("Invalid AccountId");
+                    }
+                }
                 var listMasterType = await _masterTypeDetailGenericRepository.GetAllAsync();
                 var ledgerHead = listMasterType.FirstOrDefault(m => m.Name.ToLower().Equals("payment"));
                 if (ledgerHead == null)
@@ -299,7 +304,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
 
                 var daybookCR = new Daybook
                 {
-                    AccountId = accountId,
+                    AccountId = payMode.Name.ToLower() == "cash" ? 239 : payMode.Name.ToLower() == "bank" ? 237 : (int?)null,
                     Amount = command.RecieveAmount,
                     TransType = "CR",
                     StaffId = loginId,
@@ -327,10 +332,8 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                 };
 
                 var createdVoucherNo = await _voucherSrNoRepository.AddAsync(voucherNo);
-
                 transFund.VoucherNo = createdVoucherNo.Id;
                 var createdTransFund = await _transFundGenericRepository.AddAsync(transFund);
-
                 daybookDR.FundReferenceId = createdTransFund.Id;
                 var createdDayBookDR = await _dayBookGenericRepository.AddAsync(daybookDR);
                 daybookCR.ParentId = createdDayBookDR.Id;
@@ -358,7 +361,7 @@ namespace WebApi.Controllers.TransFundPaymentDetails
                             TransType = "CR",
                             SessionId = command.SessionId,
                             Amount = command.BankChargeAmount,
-                            FranchiseId = command.EntityBankAccountTypeId,
+                            FranchiseId = 1280,
                             ParentId = createdDayBookDR.Id,
                             StaffId = loginId,
                         };

@@ -49,6 +49,7 @@ public class EntityController : ControllerBase
     private readonly IGenericRepository<DocumentProfile> _documentProfileGenericRepository;
     private readonly IHttpContextAccessor _contextAccessor;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IGenericRepository<BankLink> _bankLinkGenericRepository;
 
 
 
@@ -62,7 +63,7 @@ public class EntityController : ControllerBase
         IGenericRepository<AddressDetail> addressDetailGenericRepository, IGenericRepository<BankDetail> bankDetailGenericRepository,
         IGenericRepository<Location> locationGenericRepository, IMasterTypeRepository masterTypeRepository,
         IGenericRepository<DocumentProfile> documentProfileGenericRepository, IHttpContextAccessor contextAccessor,
-        IHttpClientFactory httpClientFactory, AccountClfContext dbContext)
+        IHttpClientFactory httpClientFactory, AccountClfContext dbContext, IGenericRepository<BankLink> bankLinkGenericRepository)
     {
         _entityGenericRepository = entityGenericRepository;
         _profileGenericRepository = profileGenericRepository;
@@ -87,6 +88,7 @@ public class EntityController : ControllerBase
         _contextAccessor = contextAccessor;
         _httpClientFactory = httpClientFactory;
         _dbContext = dbContext;
+        _bankLinkGenericRepository = bankLinkGenericRepository;
     }
 
     [HttpPost]
@@ -101,6 +103,7 @@ public class EntityController : ControllerBase
         var entity = new Entity
         {
             Name = entityDto.Name,
+            TypeId=84,
             AccountTypeId = entityDto.AccountTypeId,
             SessionId = entityDto.SessionId,
             Date = DateTime.UtcNow,
@@ -206,7 +209,7 @@ public class EntityController : ControllerBase
                         documentList.Add(document);
                     }
                 }
-
+                var bank = new MasterTypeDetail();
                 if (bankDetailList != null && bankDetailList.Any())
                 {
                     foreach (var bankDetail in bankDetailList)
@@ -214,7 +217,7 @@ public class EntityController : ControllerBase
 
                         if (bankDetail.BankId != 0 && bankDetail.BankId != null)
                         {
-                            var bank = await _masterTypeDetailGenericRepository.GetByIdAsync(bankDetail.BankId);
+                             bank = await _masterTypeDetailGenericRepository.GetByIdAsync(bankDetail.BankId);
                             if (bank == null) return BadRequest("Invalid Bank Id");
                         }
                         if (bankDetail.ParentId.HasValue)
@@ -377,6 +380,26 @@ public class EntityController : ControllerBase
                             IsActive=true,
                         };
                         await _bankDetailGenericRepository.AddAsync(newBankDetail);
+                        var entityBankLink = new Entity
+                        {
+                            AccountTypeId = 15,
+                            SessionId = entityDto.SessionId,
+                            Status = 1,
+                            IsActive = 1,
+                            Date = entityDto.Date,
+                            Name =bank.Code +"("+bankDetail.AccountNo+")",
+                            IsDelete = false,
+                            ParentId=createdEntity.Id,
+                        };
+                        await _entityGenericRepository.AddAsync(entityBankLink);
+                        var banklink = new BankLink
+                        {
+                            BankId=entityBankLink.Id,
+                            EntityId = createdEntity.Id,
+                            IsActive = true,
+                            IsDelete=false,
+                        };
+                        await _bankLinkGenericRepository.AddAsync(banklink);
                     }
                 }
                 if (addressList != null && addressList.Any())
@@ -570,14 +593,12 @@ public class EntityController : ControllerBase
         {
             return NotFound("Data Not Found");
         }
-        var result = entities.Where(entity => entity.BankDetails.Any(x => x.EntityId == loginId))
+        var result = entities.Where(entity => entity.ParentId == loginId)
          .Select(entity => new GetEntityBankandAccountNumberDto
          {
              EntityId = entity.Id,
-             Details = entity.BankDetails
-                        .Where(b => b.EntityId == loginId)
-                                               .Select(b => $"{b.Bank.Code} - {b.AccountNo}")
-                        .FirstOrDefault()
+             Details = entity.Name
+
          })
          .ToList();
         if (result.Count == 0)
@@ -589,7 +610,7 @@ public class EntityController : ControllerBase
 
 
     [HttpGet]
-    [Route("cash-bank/entity/ledger-dropdown")]
+    [Route("cash-bank-A/C/entity/ledger-dropdown")]
     public async Task<ActionResult<List<GetEntityBankandAccountNumberDto>>> GetCashAndBankDropdown()
     {
         var entities = await _entityRepository.GetAll();
@@ -877,119 +898,6 @@ public class EntityController : ControllerBase
     }
 
 
-    //[HttpPut]
-    //[Route("UpdateDocument/{id}")]
-    //public async Task<ActionResult<int>> UpdateDocument(int id, UpdateDocumentDto documentMetadata, IFormFile? ImagePath)
-    //{
-    //    var entityAccount = await _entityRepository.GetById(id);
-    //    if (entityAccount == null)
-    //    {
-    //        return BadRequest("Invalid Entity ID.");
-    //    }
-
-    //    // Validate document metadata
-    //    if (documentMetadata == null)
-    //    {
-    //        return BadRequest("Document metadata is missing.");
-    //    }
-
-    //    // Process the document only if ImagePath is provided (not null)
-    //    if (ImagePath != null)
-    //    {
-    //        var masterTypeDetail = await _masterTypeRepository.Get();
-
-    //        // Validate DocType
-    //        if (documentMetadata.DocType.HasValue)
-    //        {
-    //            var docType = await _masterTypeDetailGenericRepository.GetByIdAsync((int)documentMetadata.DocType);
-    //            if (docType == null)
-    //                return BadRequest("Invalid Doc Type Id.");
-    //        }
-
-    //        // Check and validate the file extension
-    //        var fileExtension = Path.GetExtension(ImagePath.FileName).ToLower();
-    //        var allowedExtensionsList = masterTypeDetail
-    //            .Where(m => m.Type.Name.ToLower() == "documentextension")
-    //            .ToList();
-    //        var allowedExtensions = allowedExtensionsList.Select(x => x.Name).ToList();
-
-    //        if (!allowedExtensions.Contains(fileExtension))
-    //        {
-    //            return BadRequest($"Invalid file type '{fileExtension}'. Allowed types are: {string.Join(", ", allowedExtensions)}.");
-    //        }
-
-    //        // Save the file if the extension is valid
-    //        var matchedExtension = allowedExtensionsList.FirstOrDefault(x => x.Name.ToLower() == fileExtension);
-    //        if (matchedExtension != null)
-    //        {
-    //            var fileName = Guid.NewGuid().ToString() + fileExtension;
-    //            var filePath = Path.Combine("wwwroot/Documents", fileName);
-    //            using (var stream = new FileStream(filePath, FileMode.Create))
-    //            {
-    //                await ImagePath.CopyToAsync(stream);
-    //            }
-
-    //            var imageUrl = Path.Combine("Documents", fileName);
-
-    //            // Update the document profile if it exists, otherwise create a new one
-    //            var existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(documentMetadata.Id);
-    //            if (existingDocumentProfile != null)
-    //            {
-    //                existingDocumentProfile.DocType = documentMetadata.DocType;
-    //                existingDocumentProfile.Description = documentMetadata.Description;
-    //                existingDocumentProfile.Path = imageUrl; // Update with the new file path
-    //                existingDocumentProfile.DocExtensionId = matchedExtension.Id;
-    //                existingDocumentProfile.Name = documentMetadata.DocumentNumber;
-    //                existingDocumentProfile.IsActive = 1;
-    //                existingDocumentProfile.InsDate = DateTime.Now;
-
-    //                await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
-    //            }
-    //            else
-    //            {
-    //                var newDocumentProfile = new DocumentProfile
-    //                {
-    //                    EntityId = id,
-    //                    DocType = documentMetadata.DocType,
-    //                    Description = documentMetadata.Description,
-    //                    Path = imageUrl,
-    //                    DocExtensionId = matchedExtension.Id,
-    //                    Name = documentMetadata.DocumentNumber,
-    //                    IsActive = 1,
-    //                    InsDate = DateTime.Now
-    //                };
-
-    //                await _documentProfileGenericRepository.AddAsync(newDocumentProfile);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            return BadRequest("The uploaded file type is not supported.");
-    //        }
-    //    }
-    //    else
-    //    {
-    //        // ImagePath is null, update only document metadata (no file update)
-    //        var existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(documentMetadata.Id);
-    //        if (existingDocumentProfile != null)
-    //        {
-    //            existingDocumentProfile.DocType = documentMetadata.DocType;
-    //            existingDocumentProfile.Description = documentMetadata.Description;
-    //            existingDocumentProfile.Name = documentMetadata.DocumentNumber;
-    //            existingDocumentProfile.IsActive = 1;
-    //            existingDocumentProfile.InsDate = DateTime.Now;
-
-    //            await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
-    //        }
-    //        else
-    //        {
-    //            return BadRequest("Document profile not found.");
-    //        }
-    //    }
-
-    //    return Ok(id);
-    //}
-
     [HttpPut]
     [Route("documentprofile/{id}")]
     public async Task<ActionResult<int>> UpdateDocument(int id, [FromForm] UpdateDocumentDto documentMetadata)
@@ -1213,6 +1121,160 @@ public class EntityController : ControllerBase
             return false;
         }
     }
+
+
+
+
+
+    //[HttpPut]
+    //[Route("UpdateDocument/{id}")]
+    //public async Task<ActionResult<int>> UpdateDocument(int id, UpdateDocumentDto documentMetadata, IFormFile? ImagePath)
+    //{
+    //    var entityAccount = await _entityRepository.GetById(id);
+    //    if (entityAccount == null)
+    //    {
+    //        return BadRequest("Invalid Entity ID.");
+    //    }
+
+    //    // Validate document metadata
+    //    if (documentMetadata == null)
+    //    {
+    //        return BadRequest("Document metadata is missing.");
+    //    }
+
+    //    // Process the document only if ImagePath is provided (not null)
+    //    if (ImagePath != null)
+    //    {
+    //        var masterTypeDetail = await _masterTypeRepository.Get();
+
+    //        // Validate DocType
+    //        if (documentMetadata.DocType.HasValue)
+    //        {
+    //            var docType = await _masterTypeDetailGenericRepository.GetByIdAsync((int)documentMetadata.DocType);
+    //            if (docType == null)
+    //                return BadRequest("Invalid Doc Type Id.");
+    //        }
+
+    //        // Check and validate the file extension
+    //        var fileExtension = Path.GetExtension(ImagePath.FileName).ToLower();
+    //        var allowedExtensionsList = masterTypeDetail
+    //            .Where(m => m.Type.Name.ToLower() == "documentextension")
+    //            .ToList();
+    //        var allowedExtensions = allowedExtensionsList.Select(x => x.Name).ToList();
+
+    //        if (!allowedExtensions.Contains(fileExtension))
+    //        {
+    //            return BadRequest($"Invalid file type '{fileExtension}'. Allowed types are: {string.Join(", ", allowedExtensions)}.");
+    //        }
+
+    //        // Save the file if the extension is valid
+    //        var matchedExtension = allowedExtensionsList.FirstOrDefault(x => x.Name.ToLower() == fileExtension);
+    //        if (matchedExtension != null)
+    //        {
+    //            var fileName = Guid.NewGuid().ToString() + fileExtension;
+    //            var filePath = Path.Combine("wwwroot/Documents", fileName);
+    //            using (var stream = new FileStream(filePath, FileMode.Create))
+    //            {
+    //                await ImagePath.CopyToAsync(stream);
+    //            }
+
+    //            var imageUrl = Path.Combine("Documents", fileName);
+
+    //            // Update the document profile if it exists, otherwise create a new one
+    //            var existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(documentMetadata.Id);
+    //            if (existingDocumentProfile != null)
+    //            {
+    //                existingDocumentProfile.DocType = documentMetadata.DocType;
+    //                existingDocumentProfile.Description = documentMetadata.Description;
+    //                existingDocumentProfile.Path = imageUrl; // Update with the new file path
+    //                existingDocumentProfile.DocExtensionId = matchedExtension.Id;
+    //                existingDocumentProfile.Name = documentMetadata.DocumentNumber;
+    //                existingDocumentProfile.IsActive = 1;
+    //                existingDocumentProfile.InsDate = DateTime.Now;
+
+    //                await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
+    //            }
+    //            else
+    //            {
+    //                var newDocumentProfile = new DocumentProfile
+    //                {
+    //                    EntityId = id,
+    //                    DocType = documentMetadata.DocType,
+    //                    Description = documentMetadata.Description,
+    //                    Path = imageUrl,
+    //                    DocExtensionId = matchedExtension.Id,
+    //                    Name = documentMetadata.DocumentNumber,
+    //                    IsActive = 1,
+    //                    InsDate = DateTime.Now
+    //                };
+
+    //                await _documentProfileGenericRepository.AddAsync(newDocumentProfile);
+    //            }
+    //        }
+    //        else
+    //        {
+    //            return BadRequest("The uploaded file type is not supported.");
+    //        }
+    //    }
+    //    else
+    //    {
+    //        // ImagePath is null, update only document metadata (no file update)
+    //        var existingDocumentProfile = await _documentProfileGenericRepository.GetByIdAsync(documentMetadata.Id);
+    //        if (existingDocumentProfile != null)
+    //        {
+    //            existingDocumentProfile.DocType = documentMetadata.DocType;
+    //            existingDocumentProfile.Description = documentMetadata.Description;
+    //            existingDocumentProfile.Name = documentMetadata.DocumentNumber;
+    //            existingDocumentProfile.IsActive = 1;
+    //            existingDocumentProfile.InsDate = DateTime.Now;
+
+    //            await _documentProfileGenericRepository.UpdateAsync(existingDocumentProfile.Id, existingDocumentProfile);
+    //        }
+    //        else
+    //        {
+    //            return BadRequest("Document profile not found.");
+    //        }
+    //    }
+
+    //    return Ok(id);
+    //}
+
+
+
+
+
+    //[HttpGet]
+    //[Route("detail/bank-name/account-number")]
+    //public async Task<ActionResult<List<GetEntityBankandAccountNumberDto>>> GetBankAndAccountNumber()
+    //{
+    //    var loginIdClaim = _contextAccessor.HttpContext.User.FindFirstValue("id");
+    //    int? loginId = null;
+    //    if (!string.IsNullOrEmpty(loginIdClaim))
+    //    {
+    //        loginId = Convert.ToInt32(loginIdClaim);
+    //    }
+    //    var entities = await _entityRepository.GetAll();
+
+    //    if (entities == null)
+    //    {
+    //        return NotFound("Data Not Found");
+    //    }
+    //    var result = entities.Where(entity => entity.BankDetails.Any(x => x.EntityId == loginId))
+    //     .Select(entity => new GetEntityBankandAccountNumberDto
+    //     {
+    //         EntityId = entity.Id,
+    //         Details = entity.BankDetails
+    //                    .Where(b => b.EntityId == loginId)
+    //                                           .Select(b => $"{b.Bank.Code} - {b.AccountNo}")
+    //                    .FirstOrDefault()
+    //     })
+    //     .ToList();
+    //    if (result.Count == 0)
+    //    {
+    //        return BadRequest("Bank Ledger Account Not Found For this users");
+    //    }
+    //    return Ok(result);
+    //}
 
 }
 

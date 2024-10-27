@@ -37,6 +37,10 @@ public partial class Entity
 
     public virtual ICollection<BankDetail> BankDetails { get; set; } = new List<BankDetail>();
 
+    public virtual ICollection<BankLink> BankLinkBanks { get; set; } = new List<BankLink>();
+
+    public virtual ICollection<BankLink> BankLinkEntities { get; set; } = new List<BankLink>();
+
     public virtual ICollection<BasicProfile> BasicProfiles { get; set; } = new List<BasicProfile>();
 
     public virtual ICollection<ContactProfile> ContactProfiles { get; set; } = new List<ContactProfile>();

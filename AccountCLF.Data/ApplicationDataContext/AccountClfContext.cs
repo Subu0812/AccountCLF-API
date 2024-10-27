@@ -24,6 +24,8 @@ public partial class AccountClfContext : DbContext
 
     public virtual DbSet<BankDetail> BankDetails { get; set; }
 
+    public virtual DbSet<BankLink> BankLinks { get; set; }
+
     public virtual DbSet<BasicProfile> BasicProfiles { get; set; }
 
     public virtual DbSet<ContactProfile> ContactProfiles { get; set; }
@@ -181,6 +183,21 @@ public partial class AccountClfContext : DbContext
             entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent)
                 .HasForeignKey(d => d.ParentId)
                 .HasConstraintName("FK_BankDetail_Parent");
+        });
+
+        modelBuilder.Entity<BankLink>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__BankLink__3214EC070405BD5E");
+
+            entity.ToTable("BankLink");
+
+            entity.HasOne(d => d.Bank).WithMany(p => p.BankLinkBanks)
+                .HasForeignKey(d => d.BankId)
+                .HasConstraintName("FK__BankLink__BankId__42ACE4D4");
+
+            entity.HasOne(d => d.Entity).WithMany(p => p.BankLinkEntities)
+                .HasForeignKey(d => d.EntityId)
+                .HasConstraintName("FK__BankLink__Entity__41B8C09B");
         });
 
         modelBuilder.Entity<BasicProfile>(entity =>

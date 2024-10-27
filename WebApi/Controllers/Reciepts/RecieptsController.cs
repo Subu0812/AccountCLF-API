@@ -7,7 +7,6 @@ using AccountCLF.Data.Repository.Entities;
 using AccountCLF.Data.Repository.LoanAccounts;
 using Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Model;
 using System.Security.Claims;
 
@@ -68,18 +67,14 @@ namespace WebApi.Controllers.Reciepts
         }
 
 
-
-
-
-
         [HttpGet("cash-bank/total-balance/paymode/{entityId}")]
-        public async Task<ActionResult<GetAllUserAccountBalanceDto>> GetCashBankUserTotalBalance(int entityId, int? paymodeid,int bankid)
+        public async Task<ActionResult<GetAllUserAccountBalanceDto>> GetCashBankUserTotalBalance(int entityId, int? paymodeid, int bankid)
         {
             var entity = await _entityGenericRepository.GetByIdAsync(entityId);
             if (entity == null)
             {
                 return BadRequest("Entity ID is not valid.");
-            }   
+            }
 
             var filteredDaybooks = new List<Daybook>();
             var daybooks = await _dayBookRepository.GetAll();
@@ -96,14 +91,12 @@ namespace WebApi.Controllers.Reciepts
             if (bankid != null)
             {
                 accountid = payModeData.Name.ToLower() == "cash" ? 236 : payModeData.Name.ToLower() == "bank" ? 237 : 0;
-                filteredDaybooks = filteredDaybooks.Where(x=>x.AccountId== accountid).ToList(); 
+                filteredDaybooks = filteredDaybooks.Where(x => x.AccountId == bankid).ToList(); 
             }
-           
             if (!filteredDaybooks.Any())
             {
                 return NotFound("No records found for the given Franchise ID and PayMode ID.");
             }
-
             decimal balance = 0;
             foreach (var daybook in filteredDaybooks)
             {
@@ -238,7 +231,6 @@ namespace WebApi.Controllers.Reciepts
         [HttpPost]
         public async Task<ActionResult<int>> CreateRecieptDetail(CreateRecieptDto command)
         {
-
             var loginIdClaim = _contextAccessor.HttpContext.User.FindFirstValue("id");
             int? loginId = null;
             if (!string.IsNullOrEmpty(loginIdClaim))
