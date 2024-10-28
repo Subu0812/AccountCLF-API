@@ -103,7 +103,7 @@ public class EntityController : ControllerBase
         var entity = new Entity
         {
             Name = entityDto.Name,
-            TypeId=84,
+            TypeId = 84,
             AccountTypeId = entityDto.AccountTypeId,
             SessionId = entityDto.SessionId,
             Date = DateTime.UtcNow,
@@ -217,7 +217,7 @@ public class EntityController : ControllerBase
 
                         if (bankDetail.BankId != 0 && bankDetail.BankId != null)
                         {
-                             bank = await _masterTypeDetailGenericRepository.GetByIdAsync(bankDetail.BankId);
+                            bank = await _masterTypeDetailGenericRepository.GetByIdAsync(bankDetail.BankId);
                             if (bank == null) return BadRequest("Invalid Bank Id");
                         }
                         if (bankDetail.ParentId.HasValue)
@@ -346,7 +346,7 @@ public class EntityController : ControllerBase
                             var imageUrl = Path.Combine("PanCard/", fileName);
                             var documentProfile = new DocumentProfile
                             {
-                                SrNo=documentMetadata.DocumentSrNo,
+                                SrNo = documentMetadata.DocumentSrNo,
                                 EntityId = createdEntity.Id,
                                 DocType = documentMetadata.DocType,
                                 IsActive = 1,
@@ -355,7 +355,7 @@ public class EntityController : ControllerBase
                                 DocExtensionId = matchedExtension.Id,
                                 Path = imageUrl,
                                 Name = documentMetadata.DocumentNumber,
-                                                            };
+                            };
                             await _documentProfileGenericRepository.AddAsync(documentProfile);
                         }
                         else
@@ -377,7 +377,7 @@ public class EntityController : ControllerBase
                             Ifsccode = bankDetail.Ifsccode,
                             BankId = bankDetail.BankId,
                             EntityId = createdEntity.Id,
-                            IsActive=true,
+                            IsActive = true,
                         };
                         await _bankDetailGenericRepository.AddAsync(newBankDetail);
                         var entityBankLink = new Entity
@@ -387,17 +387,17 @@ public class EntityController : ControllerBase
                             Status = 1,
                             IsActive = 1,
                             Date = entityDto.Date,
-                            Name =bank.Code +"("+bankDetail.AccountNo+")",
+                            Name = bank.Code + "(" + bankDetail.AccountNo + ")",
                             IsDelete = false,
-                            ParentId=createdEntity.Id,
+                            ParentId = createdEntity.Id,
                         };
                         await _entityGenericRepository.AddAsync(entityBankLink);
                         var banklink = new BankLink
                         {
-                            BankId=entityBankLink.Id,
+                            BankId = entityBankLink.Id,
                             EntityId = createdEntity.Id,
                             IsActive = true,
-                            IsDelete=false,
+                            IsDelete = false,
                         };
                         await _bankLinkGenericRepository.AddAsync(banklink);
                     }
@@ -668,6 +668,29 @@ public class EntityController : ControllerBase
         }
         return Ok(mappedData);
     }
+
+
+    [HttpGet]
+    [Route("filter/entity-deduction/dropdown")]
+    public async Task<ActionResult<List<GetEntityBankandAccountNumberDto>>> GetEntityDeductionDropdown()
+    {
+        var entities = await _entityRepository.GetAll();
+
+        if (entities == null || !entities.Any())
+        {
+            return NotFound("Data Not Found");
+        }
+        var filteredEntities = entities
+            .Where(e => e.TypeId == 84)
+            .Select(e => new GetEntityBankandAccountNumberDto
+            {
+                EntityId = e.Id,
+                Details = e.Name
+            })
+            .ToList();
+        return Ok(filteredEntities);
+    }
+
 
 
     [HttpGet]
@@ -1060,9 +1083,9 @@ public class EntityController : ControllerBase
             return BadRequest("invalid id");
         }
         addressDetail.IsDelete = true;
-      await  _addressDetailGenericRepository.UpdateAsync(id, addressDetail);
+        await _addressDetailGenericRepository.UpdateAsync(id, addressDetail);
         return Ok("Address Detail Delete Successfully!");
-    } 
+    }
 
 
     [HttpDelete]
@@ -1075,7 +1098,7 @@ public class EntityController : ControllerBase
             return BadRequest("invalid id");
         }
         bankDetail.IsDelete = true;
-      await  _bankDetailGenericRepository.UpdateAsync(id, bankDetail);
+        await _bankDetailGenericRepository.UpdateAsync(id, bankDetail);
         return Ok("Bank Detail Delete Successfully!");
     }
 
@@ -1090,7 +1113,7 @@ public class EntityController : ControllerBase
             return BadRequest("invalid id");
         }
         documentProfile.IsDelete = true;
-      await  _documentProfileGenericRepository.UpdateAsync(id, documentProfile);
+        await _documentProfileGenericRepository.UpdateAsync(id, documentProfile);
         return Ok("Document Profile Delete Successfully!");
     }
 

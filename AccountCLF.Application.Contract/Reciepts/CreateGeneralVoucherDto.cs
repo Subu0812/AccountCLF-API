@@ -10,9 +10,10 @@ namespace AccountCLF.Application.Contract.Reciepts
     {
         public int? SessionId { get; set; }
         public DateTime? EntryDate { get; set; }
-        public int? DRAccount { get; set; }
-        public int? CRAccount { get; set; }
+        //public int? DRAccount { get; set; }
+        //public int? CRAccount { get; set; }
         public int? EntityId { get; set; }
+        public string TransType { get; set; }    
         public decimal? TotalAmount { get; set; }
         public string? Remark { get; set; }
 

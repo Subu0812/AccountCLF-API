@@ -68,7 +68,7 @@ namespace WebApi.Controllers.Reciepts
 
 
         [HttpGet("cash-bank/total-balance/paymode/{entityId}")]
-        public async Task<ActionResult<GetAllUserAccountBalanceDto>> GetCashBankUserTotalBalance(int entityId, int? paymodeid, int bankid)
+        public async Task<ActionResult<GetAllUserAccountBalanceDto>> GetCashBankUserTotalBalance(int entityId, int? paymodeid, int? bankid)
         {
             var entity = await _entityGenericRepository.GetByIdAsync(entityId);
             if (entity == null)
@@ -571,22 +571,24 @@ namespace WebApi.Controllers.Reciepts
             {
                 return BadRequest("Voucher type 'General' not found.");
             }
-            if (command.DRAccount.HasValue)
-            {
-                var entity = await _entityGenericRepository.GetByIdAsync(command.DRAccount.Value);
-                if (entity == null)
-                {
-                    return BadRequest("Invalid Entity Id");
-                }
-            }
-            if (command.CRAccount.HasValue)
-            {
-                var entity = await _entityGenericRepository.GetByIdAsync(command.CRAccount.Value);
-                if (entity == null)
-                {
-                    return BadRequest("Invalid Entity Id");
-                }
-            }
+
+            //if (command.DRAccount.HasValue)
+            //{
+            //    var entity = await _entityGenericRepository.GetByIdAsync(command.DRAccount.Value);
+            //    if (entity == null)
+            //    {
+            //        return BadRequest("Invalid Entity Id");
+            //    }
+            //}
+            //if (command.CRAccount.HasValue)
+            //{
+            //    var entity = await _entityGenericRepository.GetByIdAsync(command.CRAccount.Value);
+            //    if (entity == null)
+            //    {
+            //        return BadRequest("Invalid Entity Id");
+            //    }
+            //}
+
             if (command.EntityId.HasValue)
             {
                 var entity = await _entityGenericRepository.GetByIdAsync(command.EntityId.Value);
@@ -618,14 +620,14 @@ namespace WebApi.Controllers.Reciepts
                 Status = true,
             };
             var createdTransFund = await _transFundRepository.AddAsync(transFund);
+            var transTypeDR = command.TransType.ToUpper().Equals("CR", StringComparison.OrdinalIgnoreCase) ? "DR" : "CR";
 
             var DRdaybook = new Daybook
             {
-                AccountId = command.DRAccount,
                 Status = true,
                 FranchiseId = loginId,
                 FundReferenceId = createdTransFund.Id,
-                TransType = "DR",
+                TransType = transTypeDR,
                 SessionId = command.SessionId,
                 Amount = command.TotalAmount,
 
@@ -633,11 +635,10 @@ namespace WebApi.Controllers.Reciepts
             var createdDRDayBook = await _dayBookGenericRepository.AddAsync(DRdaybook);
             var CRdaybook = new Daybook
             {
-                AccountId = command.CRAccount,
                 Status = true,
                 FranchiseId = command.EntityId,
                 FundReferenceId = createdTransFund.Id,
-                TransType = "CR",
+                TransType = command.TransType,
                 SessionId = command.SessionId,
                 Amount = command.TotalAmount,
                 ParentId = createdDRDayBook.Id,

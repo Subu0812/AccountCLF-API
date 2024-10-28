@@ -15,7 +15,7 @@ namespace AccountCLF.Data.Repository.MasterTypeDetails
         {
             var data = await _dataContext.MasterTypeDetails
                 .Include(x => x.Type)
-                .Where(x => x.Type.Name == name)
+                .Where(x => x.Type.Name == name &x.Id!=71 &x.Id!=84)
                 .ToListAsync();
             return data;
         }
