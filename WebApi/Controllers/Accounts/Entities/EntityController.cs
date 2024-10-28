@@ -355,6 +355,7 @@ public class EntityController : ControllerBase
                                 DocExtensionId = matchedExtension.Id,
                                 Path = imageUrl,
                                 Name = documentMetadata.DocumentNumber,
+                                IsDelete=false
                             };
                             await _documentProfileGenericRepository.AddAsync(documentProfile);
                         }
@@ -378,6 +379,7 @@ public class EntityController : ControllerBase
                             BankId = bankDetail.BankId,
                             EntityId = createdEntity.Id,
                             IsActive = true,
+                            IsDelete = false,
                         };
                         await _bankDetailGenericRepository.AddAsync(newBankDetail);
                         var entityBankLink = new Entity
@@ -414,6 +416,7 @@ public class EntityController : ControllerBase
                             Address = address.Address,
                             LandMark = address.LandMark,
                             EntityId = createdEntity.Id,
+                            IsDelete=false,
                         };
                         await _addressDetailGenericRepository.AddAsync(newAddress);
                     }
