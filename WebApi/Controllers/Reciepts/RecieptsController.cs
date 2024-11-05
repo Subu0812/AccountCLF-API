@@ -91,7 +91,7 @@ namespace WebApi.Controllers.Reciepts
             if (bankid != null)
             {
                 accountid = payModeData.Name.ToLower() == "cash" ? 236 : payModeData.Name.ToLower() == "bank" ? 237 : 0;
-                filteredDaybooks = filteredDaybooks.Where(x => x.AccountId == bankid).ToList(); 
+                filteredDaybooks = filteredDaybooks.Where(x => x.AccountId == bankid).ToList();
             }
             if (!filteredDaybooks.Any())
             {
@@ -572,30 +572,15 @@ namespace WebApi.Controllers.Reciepts
                 return BadRequest("Voucher type 'General' not found.");
             }
 
-            //if (command.DRAccount.HasValue)
-            //{
-            //    var entity = await _entityGenericRepository.GetByIdAsync(command.DRAccount.Value);
-            //    if (entity == null)
-            //    {
-            //        return BadRequest("Invalid Entity Id");
-            //    }
-            //}
-            //if (command.CRAccount.HasValue)
-            //{
-            //    var entity = await _entityGenericRepository.GetByIdAsync(command.CRAccount.Value);
-            //    if (entity == null)
-            //    {
-            //        return BadRequest("Invalid Entity Id");
-            //    }
-            //}
-
-            if (command.EntityId.HasValue)
+            var entity = await _entityGenericRepository.GetByIdAsync(command.EntityId);
+            if (entity == null)
             {
-                var entity = await _entityGenericRepository.GetByIdAsync(command.EntityId.Value);
-                if (entity == null)
-                {
-                    return BadRequest("Invalid Entity Id");
-                }
+                return BadRequest("Invalid Entity Id");
+            }
+
+            if (command.Amount != command.TotalAmount)
+            {
+                return BadRequest("amount not match! sorry");
             }
 
             var voucherNo = new VoucherSrNo
@@ -621,18 +606,6 @@ namespace WebApi.Controllers.Reciepts
             };
             var createdTransFund = await _transFundRepository.AddAsync(transFund);
             var transTypeDR = command.TransType.ToUpper().Equals("CR", StringComparison.OrdinalIgnoreCase) ? "DR" : "CR";
-
-            var DRdaybook = new Daybook
-            {
-                Status = true,
-                FranchiseId = loginId,
-                FundReferenceId = createdTransFund.Id,
-                TransType = transTypeDR,
-                SessionId = command.SessionId,
-                Amount = command.TotalAmount,
-
-            };
-            var createdDRDayBook = await _dayBookGenericRepository.AddAsync(DRdaybook);
             var CRdaybook = new Daybook
             {
                 Status = true,
@@ -641,11 +614,43 @@ namespace WebApi.Controllers.Reciepts
                 TransType = command.TransType,
                 SessionId = command.SessionId,
                 Amount = command.TotalAmount,
-                ParentId = createdDRDayBook.Id,
             };
             await _dayBookGenericRepository.AddAsync(CRdaybook);
+            if (command.Ledger == null)
+            {
+                var DRdaybook = new Daybook
+                {
+                    Status = true,
+                    FranchiseId = loginId,
+                    FundReferenceId = createdTransFund.Id,
+                    TransType = transTypeDR,
+                    SessionId = command.SessionId,
+                    Amount = command.TotalAmount,
+                    ParentId = CRdaybook.Id,
+                };
+                var createdDRDayBook = await _dayBookGenericRepository.AddAsync(DRdaybook);
+            }
+            else
+            {
+                foreach (var ledger in command.Ledger)
+                {
+                    var ledgerAmount = ledger.Amount ?? 0;
+                    var drDayBookEntry = new Daybook
+                    {
+                        Status = true,
+                        FranchiseId = command.EntityId,
+                        FundReferenceId = createdTransFund.Id,
+                        TransType = transTypeDR,
+                        SessionId = command.SessionId,
+                        Amount = ledgerAmount,
+                        ParentId = CRdaybook.Id,
+                        AccountId = ledger.LedgerId,
+                    };
+                    await _dayBookGenericRepository.AddAsync(drDayBookEntry);
+                }
+            }
 
-            return "general Voucher created successfully!";
+                return Ok("general Voucher created successfully!");
         }
 
 

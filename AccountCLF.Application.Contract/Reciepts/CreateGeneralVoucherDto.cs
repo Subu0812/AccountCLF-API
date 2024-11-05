@@ -10,12 +10,18 @@ namespace AccountCLF.Application.Contract.Reciepts
     {
         public int? SessionId { get; set; }
         public DateTime? EntryDate { get; set; }
-        //public int? DRAccount { get; set; }
-        //public int? CRAccount { get; set; }
-        public int? EntityId { get; set; }
-        public string TransType { get; set; }    
+        public int EntityId { get; set; }
+        public string TransType { get; set; }
+        public decimal? Amount { get; set; }
+
         public decimal? TotalAmount { get; set; }
         public string? Remark { get; set; }
+        public IEnumerable<CreateLedgerDto>? Ledger { get; set; }
 
+    }
+    public class CreateLedgerDto
+    {
+        public decimal? Amount { get; set; }
+        public int? LedgerId { get; set; }
     }
 }
