@@ -616,7 +616,7 @@ namespace WebApi.Controllers.Reciepts
                 Amount = command.TotalAmount,
             };
             await _dayBookGenericRepository.AddAsync(CRdaybook);
-            if (command.Ledger == null)
+            if (!command.Ledger.Any() )
             {
                 var DRdaybook = new Daybook
                 {
